@@ -57,14 +57,16 @@ echo "    1. Review and confirm your .env settings"
 echo "    2. Install Docker (if not present)"
 echo "    3. Harden the OS for SD card longevity"
 echo "    4. Configure Docker daemon log limits"
-echo "    5. Pull images and start the stack"
+echo "    5. Enable hardware watchdog (auto-reboot on hang)"
+echo "    6. Install systemd boot service (stack starts on power-on)"
+echo "    7. Pull images and start the stack"
 echo
 echo "  Press Ctrl+C at any time to abort."
 
 # -----------------------------------------------------------------------------
 # Step 1 — Load and confirm .env settings
 # -----------------------------------------------------------------------------
-info "Step 1/5 — Environment Configuration"
+info "Step 1/7 — Environment Configuration"
 
 # Seed from env.example if .env doesn't exist yet
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -141,7 +143,7 @@ success ".env written."
 # -----------------------------------------------------------------------------
 # Step 2 — Install Docker
 # -----------------------------------------------------------------------------
-info "Step 2/5 — Docker Installation"
+info "Step 2/7 — Docker Installation"
 
 if command -v docker &>/dev/null; then
   DOCKER_VER=$(docker --version)
@@ -166,7 +168,7 @@ success "Docker Compose v2 confirmed."
 # -----------------------------------------------------------------------------
 # Step 3 — OS hardening for SD card longevity
 # -----------------------------------------------------------------------------
-info "Step 3/5 — SD Card Write Minimization"
+info "Step 3/7 — SD Card Write Minimization"
 
 # 3a. noatime on root partition
 if grep -q 'noatime' /etc/fstab; then
@@ -216,7 +218,7 @@ fi
 # -----------------------------------------------------------------------------
 # Step 4 — Docker daemon log limits
 # -----------------------------------------------------------------------------
-info "Step 4/5 — Docker Daemon Configuration"
+info "Step 4/7 — Docker Daemon Configuration"
 
 DOCKER_DAEMON="/etc/docker/daemon.json"
 
@@ -238,9 +240,87 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Step 5 — Pull images and start stack
+# Step 5 — Hardware watchdog
 # -----------------------------------------------------------------------------
-info "Step 5/5 — Start MeshMonitor Stack"
+info "Step 5/7 — Hardware Watchdog"
+
+# The Pi 4 has a built-in hardware watchdog (bcm2835_wdt).
+# If the OS hangs and stops petting the watchdog, the Pi hard-reboots.
+# This catches full system freezes that no software monitor can recover from.
+
+if systemctl is-active --quiet watchdog 2>/dev/null; then
+  success "Hardware watchdog already active."
+else
+  if confirm "Enable hardware watchdog (auto-reboot on system hang)?"; then
+    # Install watchdog daemon if needed
+    if ! command -v watchdog &>/dev/null; then
+      sudo apt-get install -y watchdog
+    fi
+
+    # Configure watchdog
+    sudo tee /etc/watchdog.conf > /dev/null <<'WEOF'
+# MeshMonitor Pi — hardware watchdog configuration
+watchdog-device = /dev/watchdog
+watchdog-timeout = 15
+interval = 5
+max-load-1 = 24
+WEOF
+
+    # Enable the kernel module and service
+    sudo modprobe bcm2835_wdt
+    echo 'bcm2835_wdt' | sudo tee /etc/modules-load.d/bcm2835_wdt.conf > /dev/null
+    sudo systemctl enable watchdog
+    sudo systemctl start watchdog
+    success "Hardware watchdog enabled. Pi will auto-reboot if OS hangs."
+  else
+    warn "Skipped hardware watchdog."
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+# Step 6 — systemd boot service
+# -----------------------------------------------------------------------------
+info "Step 6/7 — systemd Boot Service"
+
+# Ensures the stack starts on every boot, even after a watchdog-triggered
+# hard reboot where Docker's own restart policy may not fire cleanly.
+
+SYSTEMD_UNIT="/etc/systemd/system/meshmonitor.service"
+
+if [[ -f "$SYSTEMD_UNIT" ]]; then
+  success "meshmonitor.service already installed."
+else
+  if confirm "Install systemd service to start stack automatically on boot?"; then
+    sudo tee "$SYSTEMD_UNIT" > /dev/null <<SEOF
+[Unit]
+Description=MeshMonitor Pi Stack
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=${SCRIPT_DIR}
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
+SEOF
+    sudo systemctl daemon-reload
+    sudo systemctl enable meshmonitor.service
+    success "meshmonitor.service installed and enabled."
+  else
+    warn "Skipped systemd service. Stack will not auto-start on reboot."
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+# Step 7 — Pull images and start stack
+# -----------------------------------------------------------------------------
+info "Step 7/7 — Start MeshMonitor Stack"
 
 cd "$SCRIPT_DIR"
 

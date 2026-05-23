@@ -1,0 +1,11 @@
+# Secrets — never commit
+.env
+
+# Local Claude context files
+CLAUDE.md
+NewChatPrompt.md
+
+# macOS / editor noise
+.DS_Store
+*.swp
+*.bak

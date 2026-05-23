@@ -1,0 +1,190 @@
+# =============================================================================
+# MeshMonitor - Raspberry Pi 4 Docker Compose (SD Card Optimized)
+# =============================================================================
+#
+# Designed for 64-bit Raspberry Pi 4 (arm64) running off micro-SD.
+# Minimizes disk writes to extend SD card lifespan.
+#
+# SD Card Protection (5 layers):
+#   1. Docker logging  - local driver, capped at ~100KB per service
+#   2. Access logs     - disabled via ACCESS_LOG_ENABLED=false
+#   3. Audit/app logs  - tmpfs on /data/logs (RAM-only, lost on restart)
+#   4. Temp files      - tmpfs on /tmp in all containers
+#   5. Debug output    - suppressed via NODE_ENV=production
+#
+# Only remaining disk writes:
+#   - SQLite DB (/data/meshmonitor.db) — necessary for persistence
+#   - Docker image layers             — pulled during upgrades only
+#
+# Usage:
+#   cp .env.example .env && nano .env   # configure first
+#   docker compose up -d
+#
+# View logs (RAM-only, lost on restart):
+#   docker compose logs -f
+#
+# Future serial node:
+#   Uncomment the serial-bridge service below and set SERIAL_DEVICE in .env
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # MeshMonitor — main web dashboard
+  # ---------------------------------------------------------------------------
+  meshmonitor:
+    image: ghcr.io/yeraze/meshmonitor:latest
+    container_name: meshmonitor
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:3001"
+    networks:
+      - meshtastic_net
+    volumes:
+      - meshmonitor-data:/data
+    tmpfs:
+      - /data/logs:size=10M    # audit.log goes to RAM, never hits SD
+      - /tmp:size=50M
+    environment:
+      - NODE_ENV=production
+      - TZ=${TZ:-America/Phoenix}
+
+      # Meshtastic source — TCP node on LAN
+      - MESHTASTIC_NODE_IP=${MESHTASTIC_NODE_IP}
+      - MESHTASTIC_NODE_PORT=${MESHTASTIC_NODE_PORT:-4403}
+
+      # Access control
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - SESSION_SECRET=${SESSION_SECRET}
+
+      # Write reduction
+      - ACCESS_LOG_ENABLED=false
+
+      # Virtual Node — exposes a TCP endpoint for mqtt-proxy and mobile apps
+      - ENABLE_VIRTUAL_NODE=true
+      - VIRTUAL_NODE_PORT=4404
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - >
+          node -e '
+            const net = require("net");
+            const c = new net.Socket();
+            c.connect(4404, "127.0.0.1", () => process.exit(0));
+            c.on("error", () => process.exit(1));
+          '
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "100k"
+        max-file: "2"
+    labels:
+      - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
+
+  # ---------------------------------------------------------------------------
+  # MQTT Proxy — bridges MeshMonitor's Virtual Node to an upstream MQTT broker
+  # Forwards mesh traffic to/from the public Meshtastic MQTT network
+  # ---------------------------------------------------------------------------
+  mqtt-proxy:
+    image: ghcr.io/ln4cy/mqtt-proxy:master
+    container_name: mqtt-proxy
+    restart: unless-stopped
+    networks:
+      - meshtastic_net
+    environment:
+      - INTERFACE_TYPE=tcp
+      - TCP_NODE_HOST=meshmonitor
+      - TCP_NODE_PORT=4404
+      - MQTT_BROKER=${MQTT_BROKER:-mqtt.meshtastic.org}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-meshdev}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-large4cats}
+      - MQTT_TOPIC=${MQTT_TOPIC:-msh/US/2/e/LongFast/#}
+    depends_on:
+      meshmonitor:
+        condition: service_healthy
+    tmpfs:
+      - /tmp:size=10M
+    logging:
+      driver: local
+      options:
+        max-size: "100k"
+        max-file: "2"
+    labels:
+      - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
+
+  # ---------------------------------------------------------------------------
+  # Watchtower — automatic image updates (daily at 3 AM local time)
+  # Only watches containers labeled with scope=meshmonitor-pi
+  # ---------------------------------------------------------------------------
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=${TZ:-America/Phoenix}
+      - WATCHTOWER_SCHEDULE=${WATCHTOWER_SCHEDULE:-0 0 3 * * *}
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_NOTIFICATIONS_LEVEL=warn
+    logging:
+      driver: local
+      options:
+        max-size: "100k"
+        max-file: "2"
+
+  # ---------------------------------------------------------------------------
+  # Serial Bridge — FUTURE USE (commented out)
+  # Uncomment this service when attaching a USB/serial Meshtastic node.
+  # Also update MESHTASTIC_NODE_IP in .env to: serial-bridge
+  #
+  # Steps to enable:
+  #   1. Set SERIAL_DEVICE in .env (default: /dev/ttyACM0)
+  #   2. Uncomment the serial-bridge service below
+  #   3. Change MESHTASTIC_NODE_IP in .env to: serial-bridge
+  #   4. Run: docker compose up -d
+  # ---------------------------------------------------------------------------
+  # serial-bridge:
+  #   image: ghcr.io/yeraze/meshtastic-serial-bridge:latest
+  #   container_name: meshmonitor-serial-bridge
+  #   restart: unless-stopped
+  #   networks:
+  #     - meshtastic_net
+  #   devices:
+  #     - ${SERIAL_DEVICE:-/dev/ttyACM0}:/dev/ttyACM0
+  #   environment:
+  #     - SERIAL_DEVICE=/dev/ttyACM0
+  #     - BAUD_RATE=115200
+  #     - TCP_PORT=4403
+  #   tmpfs:
+  #     - /tmp:size=10M
+  #   logging:
+  #     driver: local
+  #     options:
+  #       max-size: "100k"
+  #       max-file: "2"
+  #   labels:
+  #     - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+volumes:
+  meshmonitor-data:
+    driver: local
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+networks:
+  meshtastic_net:
+    driver: bridge

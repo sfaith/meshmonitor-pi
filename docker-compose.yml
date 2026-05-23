@@ -84,8 +84,6 @@ services:
       options:
         max-size: "100k"
         max-file: "2"
-    labels:
-      - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
 
   # ---------------------------------------------------------------------------
   # MQTT Proxy — bridges MeshMonitor's Virtual Node to an upstream MQTT broker
@@ -116,31 +114,12 @@ services:
       options:
         max-size: "100k"
         max-file: "2"
-    labels:
-      - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
 
   # ---------------------------------------------------------------------------
-  # Watchtower — automatic image updates (daily at 3 AM local time)
-  # Only watches containers labeled with scope=meshmonitor-pi
+  # Auto-upgrade is handled by a cron job installed by setup.sh
+  # (Watchtower was removed — archived upstream, incompatible with Docker 29+)
+  # To manually upgrade: docker compose pull && docker compose up -d
   # ---------------------------------------------------------------------------
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - TZ=${TZ:-America/Phoenix}
-      - WATCHTOWER_SCHEDULE=${WATCHTOWER_SCHEDULE:-0 0 3 * * *}
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_INCLUDE_STOPPED=false
-      - WATCHTOWER_LABEL_ENABLE=true
-      - WATCHTOWER_NOTIFICATIONS_LEVEL=warn
-    logging:
-      driver: local
-      options:
-        max-size: "100k"
-        max-file: "2"
 
   # ---------------------------------------------------------------------------
   # Serial Bridge — FUTURE USE (commented out)

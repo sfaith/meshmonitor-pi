@@ -103,7 +103,7 @@ prompt MESHTASTIC_NODE_PORT "Meshtastic port      " "${MESHTASTIC_NODE_PORT:-440
 prompt TZ                  "Timezone              " "${TZ:-America/Phoenix}"
 prompt MQTT_BROKER         "MQTT broker           " "${MQTT_BROKER:-mqtt.meshtastic.org}"
 prompt MQTT_TOPIC          "MQTT topic            " "${MQTT_TOPIC:-msh/US/2/e/LongFast/#}"
-prompt WATCHTOWER_SCHEDULE "Watchtower schedule   " "${WATCHTOWER_SCHEDULE:-0 0 3 * * *}"
+prompt UPGRADE_TIME        "Auto-upgrade time     " "${UPGRADE_TIME:-03:00}"
 
 # Derive ALLOWED_ORIGINS from PI_IP and HOST_PORT
 ALLOWED_ORIGINS="http://${PI_IP}:${HOST_PORT}"
@@ -141,8 +141,7 @@ MQTT_PORT=${MQTT_PORT:-1883}
 MQTT_USERNAME=${MQTT_USERNAME:-meshdev}
 MQTT_PASSWORD=${MQTT_PASSWORD:-large4cats}
 MQTT_TOPIC=${MQTT_TOPIC}
-
-WATCHTOWER_SCHEDULE="${WATCHTOWER_SCHEDULE}"
+UPGRADE_TIME=${UPGRADE_TIME:-03:00}
 
 # SERIAL_DEVICE=/dev/ttyACM0
 EOF
@@ -352,6 +351,26 @@ SEOF
   fi
 fi
 
+# 6b. Auto-upgrade cron job
+CRON_MARKER="meshmonitor-pi auto-upgrade"
+if crontab -l 2>/dev/null | grep -q "$CRON_MARKER"; then
+  success "Auto-upgrade cron job already installed."
+else
+  if confirm "Install daily auto-upgrade cron job (pulls new images at ${UPGRADE_TIME:-03:00})?
+    NOTE: Runs 'docker compose pull && docker compose up -d' on a schedule.
+          Replaces Watchtower (archived upstream, incompatible with Docker 29+).
+          Logs to /tmp/meshmonitor-upgrade.log (RAM, lost on reboot).
+    Recommended: y"; then
+    UPGRADE_HOUR=$(echo "${UPGRADE_TIME:-03:00}" | cut -d: -f1)
+    UPGRADE_MIN=$(echo "${UPGRADE_TIME:-03:00}"  | cut -d: -f2)
+    CRON_LINE="${UPGRADE_MIN} ${UPGRADE_HOUR} * * * cd ${SCRIPT_DIR} && docker compose pull && docker compose up -d >> /tmp/meshmonitor-upgrade.log 2>&1 # ${CRON_MARKER}"
+    ( crontab -l 2>/dev/null; echo "$CRON_LINE" ) | crontab -
+    success "Auto-upgrade cron job installed (daily at ${UPGRADE_TIME:-03:00})."
+  else
+    warn "Skipped auto-upgrade cron. Upgrade manually with: docker compose pull && docker compose up -d"
+  fi
+fi
+
 # -----------------------------------------------------------------------------
 # Step 7 — Pull images and start stack
 # -----------------------------------------------------------------------------
@@ -360,7 +379,7 @@ info "Step 7/7 — Start MeshMonitor Stack"
 cd "$SCRIPT_DIR"
 
 if confirm "Pull latest images and start the stack now?
-    NOTE: Downloads MeshMonitor, mqtt-proxy, and Watchtower images (~500MB).
+    NOTE: Downloads MeshMonitor and mqtt-proxy images (~300MB).
           Requires internet access. The stack will start automatically on
           future reboots via the systemd service installed in step 6.
     Recommended: y"; then

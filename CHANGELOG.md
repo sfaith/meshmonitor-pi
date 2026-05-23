@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-05-23
+
+### Changed
+- Replaced Watchtower with a cron-based auto-upgrade (Watchtower archived upstream,
+  incompatible with Docker Engine 29+)
+- Auto-upgrade schedule now configured as HH:MM time in .env (UPGRADE_TIME)
+- setup.sh step 6 now installs both systemd boot service and upgrade cron job
+
+### Removed
+- Watchtower container from docker-compose.yml
+
 ## [0.1.2] - 2026-05-23
 
 ### Fixed

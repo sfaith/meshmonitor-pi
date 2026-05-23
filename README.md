@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.1.2-blue)
+![Version](https://img.shields.io/badge/version-0.1.3-blue)
 
 Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.org/) — optimized for SD card longevity and hands-off operation.
 
@@ -9,7 +9,8 @@ Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.or
 |---|---|
 | `meshmonitor` | Web dashboard — connects to Meshtastic node via TCP |
 | `mqtt-proxy` | Bridges MeshMonitor's Virtual Node to upstream MQTT broker |
-| `watchtower` | Pulls updated images nightly (3 AM), cleans up old layers |
+
+Auto-upgrades are handled by a daily cron job (installed by `setup.sh`), replacing Watchtower which was archived upstream and is incompatible with Docker Engine 29+.
 
 Serial bridge is pre-stubbed in `docker-compose.yml` for future use — see [Adding a Serial Node](#adding-a-serial-node).
 

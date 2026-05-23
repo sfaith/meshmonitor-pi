@@ -149,7 +149,9 @@ if command -v docker &>/dev/null; then
   DOCKER_VER=$(docker --version)
   success "Docker already installed: ${DOCKER_VER}"
 else
-  if ! confirm "Docker not found. Install now using the official script?"; then
+  if ! confirm "Docker not found. Install now using the official script?
+    NOTE: Uses get.docker.com — the official, Pi-supported install method.
+    Recommended: y"; then
     error "Docker is required. Aborting."
   fi
   info "Downloading and running Docker install script..."
@@ -174,7 +176,10 @@ info "Step 3/7 — SD Card Write Minimization"
 if grep -q 'noatime' /etc/fstab; then
   success "noatime already set in /etc/fstab."
 else
-  if confirm "Add 'noatime' mount option to root partition in /etc/fstab?"; then
+  if confirm "Add 'noatime' mount option to root partition in /etc/fstab?
+    NOTE: Stops the filesystem writing an access timestamp on every file read.
+          Reduces SD card writes with no impact on normal operation.
+    Recommended: y"; then
     sudo sed -i 's|\(PARTUUID=[^ ]*\s\+/\s\+ext4\s\+\)\(defaults\)|\1defaults,noatime|' /etc/fstab
     success "noatime added to /etc/fstab (takes effect on next reboot)."
   else
@@ -187,7 +192,11 @@ JOURNAL_CONF="/etc/systemd/journald.conf.d/volatile.conf"
 if [[ -f "$JOURNAL_CONF" ]]; then
   success "Volatile journal already configured."
 else
-  if confirm "Configure systemd journal as volatile (RAM only, lost on reboot)?"; then
+  if confirm "Configure systemd journal as volatile (RAM only, lost on reboot)?
+    NOTE: System logs (SSH logins, service events) are stored in RAM and lost
+          on reboot. This is fine for a dedicated appliance — MeshMonitor's
+          own data is unaffected and persists normally in the Docker volume.
+    Recommended: y"; then
     sudo mkdir -p /etc/systemd/journald.conf.d
     sudo tee "$JOURNAL_CONF" > /dev/null <<'JEOF'
 # MeshMonitor Pi — volatile journal to minimize SD card writes
@@ -206,7 +215,11 @@ fi
 if grep -q 'tmpfs.*/var/log' /etc/fstab; then
   success "tmpfs /var/log already in /etc/fstab."
 else
-  if confirm "Mount /var/log as tmpfs (RAM, 64MB, lost on reboot)?"; then
+  if confirm "Mount /var/log as tmpfs (RAM, 64MB, lost on reboot)?
+    NOTE: Redirects all system log files to RAM. Complements the volatile
+          journal above. Frees the SD card from continuous log writes.
+          64MB is ample — typical usage is under 5MB.
+    Recommended: y"; then
     echo "tmpfs  /var/log  tmpfs  defaults,noatime,size=64m  0  0" | sudo tee -a /etc/fstab > /dev/null
     warn "/var/log tmpfs will take effect on next reboot."
     success "tmpfs /var/log added to /etc/fstab."
@@ -251,7 +264,12 @@ info "Step 5/7 — Hardware Watchdog"
 if systemctl is-active --quiet watchdog 2>/dev/null; then
   success "Hardware watchdog already active."
 else
-  if confirm "Enable hardware watchdog (auto-reboot on system hang)?"; then
+  if confirm "Enable hardware watchdog (auto-reboot on system hang)?
+    NOTE: Uses the Pi 4's built-in hardware watchdog chip. If the OS freezes
+          completely (kernel panic, memory corruption, etc.) the Pi will
+          automatically hard-reboot after 15 seconds — no human intervention
+          needed. Has no effect during normal operation.
+    Recommended: y"; then
     # Install watchdog daemon if needed
     if ! command -v watchdog &>/dev/null; then
       sudo apt-get install -y watchdog
@@ -290,7 +308,11 @@ SYSTEMD_UNIT="/etc/systemd/system/meshmonitor.service"
 if [[ -f "$SYSTEMD_UNIT" ]]; then
   success "meshmonitor.service already installed."
 else
-  if confirm "Install systemd service to start stack automatically on boot?"; then
+  if confirm "Install systemd service to start stack automatically on boot?
+    NOTE: Ensures the MeshMonitor stack starts on every boot — including after
+          a watchdog-triggered hard reboot or power outage. Without this the
+          stack may not restart if Docker didn't shut down cleanly.
+    Recommended: y"; then
     sudo tee "$SYSTEMD_UNIT" > /dev/null <<SEOF
 [Unit]
 Description=MeshMonitor Pi Stack
@@ -324,7 +346,11 @@ info "Step 7/7 — Start MeshMonitor Stack"
 
 cd "$SCRIPT_DIR"
 
-if confirm "Pull latest images and start the stack now?"; then
+if confirm "Pull latest images and start the stack now?
+    NOTE: Downloads MeshMonitor, mqtt-proxy, and Watchtower images (~500MB).
+          Requires internet access. The stack will start automatically on
+          future reboots via the systemd service installed in step 6.
+    Recommended: y"; then
   docker compose pull
   docker compose up -d
   echo

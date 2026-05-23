@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.5"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.6"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -346,7 +346,10 @@ fi
 
 # 6b. Auto-upgrade cron job
 CRON_MARKER="meshmonitor-pi auto-upgrade"
-if crontab -l 2>/dev/null | grep -q "$CRON_MARKER"; then
+CRON_INSTALLED=false
+crontab -l 2>/dev/null | grep -q "$CRON_MARKER" && CRON_INSTALLED=true || true
+
+if [[ "$CRON_INSTALLED" == "true" ]]; then
   success "Auto-upgrade cron job already installed."
 else
   if confirm "Install daily auto-upgrade cron job (pulls new images at ${UPGRADE_TIME:-03:00})?

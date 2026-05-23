@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-05-23
+
+### Fixed
+- setup.sh: cron job check killed script under set -euo pipefail when crontab
+  was empty (grep -q returning exit 1 treated as fatal). Fixed by storing
+  result in a variable before the if block.
+
 ## [0.1.5] - 2026-05-23
 
 ### Removed

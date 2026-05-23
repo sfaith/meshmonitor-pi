@@ -48,7 +48,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.1"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo

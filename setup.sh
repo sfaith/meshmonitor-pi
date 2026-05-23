@@ -12,6 +12,15 @@ ENV_FILE="${SCRIPT_DIR}/.env"
 ENV_EXAMPLE="${SCRIPT_DIR}/env.example"
 DAEMON_JSON="${SCRIPT_DIR}/daemon.json"
 
+# If Docker is installed but we're not in the docker group, relaunch now
+# rather than failing silently at the point we first need Docker access.
+if command -v docker &>/dev/null && ! docker info &>/dev/null 2>&1; then
+  echo "Docker is installed but not accessible — relaunching under 'newgrp docker'..."
+  exec newgrp docker <<NEWGRP
+    cd "${SCRIPT_DIR}" && bash setup.sh
+NEWGRP
+fi
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
@@ -48,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.1"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.2"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -157,8 +166,12 @@ else
   info "Downloading and running Docker install script..."
   curl -fsSL https://get.docker.com | sudo sh
   sudo usermod -aG docker "${USER}"
-  success "Docker installed. NOTE: Log out and back in for group membership to take effect."
-  warn "If this is your first login after install, run: newgrp docker"
+  success "Docker installed."
+  warn "Docker group membership requires a new shell session."
+  warn "Relaunching setup under 'newgrp docker' to continue..."
+  exec newgrp docker <<NEWGRP
+    cd "${SCRIPT_DIR}" && bash setup.sh
+NEWGRP
 fi
 
 # Verify docker compose v2

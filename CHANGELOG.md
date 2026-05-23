@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-05-23
+
+### Fixed
+- setup.sh: automatically relaunch under `newgrp docker` if Docker group
+  membership is not yet active, preventing permission denied errors at step 7
+
 ## [0.1.1] - 2026-05-23
 
 ### Changed

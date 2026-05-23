@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-05-23
+
+### Fixed
+- Removed ENABLE_VIRTUAL_NODE and VIRTUAL_NODE_PORT env vars — removed in
+  MeshMonitor 4.0 (now configured per-source in Dashboard UI)
+- Healthcheck now probes HTTP /api/health instead of Virtual Node port 4404
+- mqtt-proxy no longer requires service_healthy — starts alongside meshmonitor
+  and retries naturally once Virtual Node port is enabled via UI
+
 ## [0.1.3] - 2026-05-23
 
 ### Changed

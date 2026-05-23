@@ -61,23 +61,11 @@ services:
 
       # Write reduction
       - ACCESS_LOG_ENABLED=false
-
-      # Virtual Node — exposes a TCP endpoint for mqtt-proxy and mobile apps
-      - ENABLE_VIRTUAL_NODE=true
-      - VIRTUAL_NODE_PORT=4404
     healthcheck:
-      test:
-        - "CMD-SHELL"
-        - >
-          node -e '
-            const net = require("net");
-            const c = new net.Socket();
-            c.connect(4404, "127.0.0.1", () => process.exit(0));
-            c.on("error", () => process.exit(1));
-          '
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
       start_period: 30s
     logging:
       driver: local
@@ -88,6 +76,10 @@ services:
   # ---------------------------------------------------------------------------
   # MQTT Proxy — bridges MeshMonitor's Virtual Node to an upstream MQTT broker
   # Forwards mesh traffic to/from the public Meshtastic MQTT network
+  #
+  # NOTE: Requires Virtual Node to be enabled in MeshMonitor Dashboard first:
+  #   Dashboard → Sources → Edit → Virtual Node → Enable → set port 4404
+  # mqtt-proxy will retry automatically once port 4404 is listening.
   # ---------------------------------------------------------------------------
   mqtt-proxy:
     image: ghcr.io/ln4cy/mqtt-proxy:master
@@ -105,8 +97,7 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD:-large4cats}
       - MQTT_TOPIC=${MQTT_TOPIC:-msh/US/2/e/LongFast/#}
     depends_on:
-      meshmonitor:
-        condition: service_healthy
+      - meshmonitor
     tmpfs:
       - /tmp:size=10M
     logging:

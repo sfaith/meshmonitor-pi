@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.1.3-blue)
+![Version](https://img.shields.io/badge/version-0.1.4-blue)
 
 Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.org/) — optimized for SD card longevity and hands-off operation.
 

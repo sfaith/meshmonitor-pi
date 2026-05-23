@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.6"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.7"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -243,7 +243,11 @@ DOCKER_DAEMON="/etc/docker/daemon.json"
 if [[ -f "$DOCKER_DAEMON" ]]; then
   warn "${DOCKER_DAEMON} already exists:"
   cat "$DOCKER_DAEMON"
-  if ! confirm "Overwrite with MeshMonitor Pi log limits?"; then
+  if ! confirm "Overwrite with MeshMonitor Pi log limits?
+    NOTE: The existing file will be replaced with the daemon.json from this repo.
+          Answer n if you have custom Docker daemon settings you want to keep.
+          Per-service log limits in docker-compose.yml apply regardless.
+    Recommended: n (if contents match above), y (if different)"; then
     warn "Skipped daemon.json update. Per-service log limits in docker-compose.yml still apply."
   else
     sudo cp "$DAEMON_JSON" "$DOCKER_DAEMON"
@@ -328,6 +332,8 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# WorkingDirectory is set to the repo path at install time.
+# If you move the repo, re-run setup.sh to update this unit.
 WorkingDirectory=${SCRIPT_DIR}
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
@@ -353,9 +359,8 @@ if [[ "$CRON_INSTALLED" == "true" ]]; then
   success "Auto-upgrade cron job already installed."
 else
   if confirm "Install daily auto-upgrade cron job (pulls new images at ${UPGRADE_TIME:-03:00})?
-    NOTE: Runs 'docker compose pull && docker compose up -d' on a schedule.
-          Replaces Watchtower (archived upstream, incompatible with Docker 29+).
-          Logs to /tmp/meshmonitor-upgrade.log (RAM, lost on reboot).
+    NOTE: Runs 'docker compose pull && docker compose up -d' daily on a schedule.
+          Logs to /tmp/meshmonitor-upgrade.log (RAM only, lost on reboot).
     Recommended: y"; then
     UPGRADE_HOUR=$(echo "${UPGRADE_TIME:-03:00}" | cut -d: -f1)
     UPGRADE_MIN=$(echo "${UPGRADE_TIME:-03:00}"  | cut -d: -f2)
@@ -375,9 +380,9 @@ info "Step 7/7 — Start MeshMonitor Stack"
 cd "$SCRIPT_DIR"
 
 if confirm "Pull latest images and start the stack now?
-    NOTE: Downloads MeshMonitor image (~250MB).
-          Requires internet access. The stack will start automatically on
-          future reboots via the systemd service installed in step 6.
+    NOTE: Pulls the latest MeshMonitor image and starts the stack.
+          Safe to run on re-runs — skips pull if image is current,
+          and leaves a running stack untouched if already healthy.
     Recommended: y"; then
   docker compose pull
   docker compose up -d

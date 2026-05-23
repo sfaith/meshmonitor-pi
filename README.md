@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.1.6-blue)
+![Version](https://img.shields.io/badge/version-0.1.7-blue)
 
 Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.org/) — optimized for SD card longevity and hands-off operation.
 
@@ -77,7 +77,9 @@ cd meshmonitor-pi
 docker compose ps
 ```
 
-All containers should show `running (healthy)` or `running`.
+The container should show `running (healthy)`.
+
+`setup.sh` is safe to re-run at any time — all steps check before acting and skip anything already configured.
 
 ### 7. Change the default password
 

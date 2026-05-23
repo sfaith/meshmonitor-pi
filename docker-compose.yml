@@ -16,12 +16,13 @@
 #   - SQLite DB (/data/meshmonitor.db) — necessary for persistence
 #   - Docker image layers             — pulled during upgrades only
 #
-# Usage:
-#   cp .env.example .env && nano .env   # configure first
-#   docker compose up -d
+# Auto-upgrade: handled by a daily cron job installed by setup.sh
+#   Manual upgrade: docker compose pull && docker compose up -d
 #
-# View logs (RAM-only, lost on restart):
-#   docker compose logs -f
+# Usage:
+#   cp env.example .env && nano .env    # configure first
+#   ./setup.sh                          # first-time setup
+#   docker compose up -d                # start stack manually if needed
 #
 # Future serial node:
 #   Uncomment the serial-bridge service below and set SERIAL_DEVICE in .env
@@ -74,12 +75,6 @@ services:
         max-file: "2"
 
   # ---------------------------------------------------------------------------
-  # Auto-upgrade is handled by a cron job installed by setup.sh
-  # (Watchtower was removed — archived upstream, incompatible with Docker 29+)
-  # To manually upgrade: docker compose pull && docker compose up -d
-  # ---------------------------------------------------------------------------
-
-  # ---------------------------------------------------------------------------
   # Serial Bridge — FUTURE USE (commented out)
   # Uncomment this service when attaching a USB/serial Meshtastic node.
   # Also update MESHTASTIC_NODE_IP in .env to: serial-bridge
@@ -109,8 +104,6 @@ services:
   #     options:
   #       max-size: "100k"
   #       max-file: "2"
-  #   labels:
-  #     - "com.centurylinklabs.watchtower.scope=meshmonitor-pi"
 
 # -----------------------------------------------------------------------------
 # Volumes

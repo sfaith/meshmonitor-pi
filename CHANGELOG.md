@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-05-23
+
+### Fixed
+- env.example: replaced hardcoded Pi IP with placeholder (YOUR_PI_IP_HERE)
+- docker-compose.yml: removed stale Watchtower label from serial-bridge stub;
+  folded standalone auto-upgrade comment into header; cleaned up usage block
+- setup.sh: removed "Replaces Watchtower" from cron prompt (no longer relevant)
+- setup.sh: added NOTE/Recommended guidance to daemon.json overwrite prompt
+- setup.sh: added comment in systemd unit warning about WorkingDirectory
+  being set at install time (re-run setup.sh if repo is moved)
+- setup.sh: step 7 prompt now accurately describes re-run behavior
+- README: "all containers" → "the container" (single container stack)
+- README: noted setup.sh is safe to re-run (idempotent)
+
 ## [0.1.6] - 2026-05-23
 
 ### Fixed

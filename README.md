@@ -95,18 +95,23 @@ docker compose ps
 # Stop stack
 docker compose down
 
-# Manual upgrade (Watchtower handles this automatically)
+# Manual upgrade (cron handles this automatically at 3 AM)
 docker compose pull && docker compose up -d
 
 # Restart a single service
 docker compose restart meshmonitor
 ```
 
-## Watchtower (Auto-Upgrade)
+## Auto-Upgrade
 
-Watchtower checks for new `meshmonitor` and `mqtt-proxy` images daily at 3 AM (`America/Phoenix`). When a new image is found it pulls it, recreates the container, and removes the old image layer to reclaim SD space.
+A cron job installed by `setup.sh` runs `docker compose pull && docker compose up -d` daily at 3 AM (`America/Phoenix`). When a new image is available it pulls it and recreates the container, removing the old layer to reclaim SD space.
 
-To change the schedule, edit `WATCHTOWER_SCHEDULE` in `.env` (standard 6-field cron with seconds).
+To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `setup.sh` to reinstall the cron job.
+
+To check the last upgrade log (RAM only, lost on reboot):
+```bash
+cat /tmp/meshmonitor-upgrade.log
+```
 
 ## Adding a Serial Node
 
@@ -132,17 +137,17 @@ When you're ready to attach a USB/serial Meshtastic node to the Pi:
 
 You can run both a TCP source and the serial bridge simultaneously — add the serial node as a second source from **Dashboard → Sources** in the MeshMonitor UI.
 
-## MQTT Proxy
+## MQTT Integration
 
-The `mqtt-proxy` container bridges MeshMonitor's Virtual Node (port 4404) to the upstream MQTT broker defined in `.env`. Defaults connect to the public Meshtastic network (`mqtt.meshtastic.org`).
+MeshMonitor 4.0 supports MQTT natively — no sidecar container needed. To add an MQTT source:
 
-To disable MQTT bridging, comment out the `mqtt-proxy` service in `docker-compose.yml`.
+**Dashboard → Sources → Add → MQTT**
 
-To change the region/channel, update `MQTT_TOPIC` in `.env`. Examples:
+Enter your broker address, credentials, and topic. For the Arizona regional mesh (`azmsh.net`):
 ```
-msh/US/2/e/LongFast/#    # US LongFast (default)
-msh/EU/2/e/LongFast/#    # Europe LongFast
-msh/US/2/e/MediumSlow/#  # US MediumSlow
+Broker   : mqtt.azmsh.net
+Topic    : msh/US/AZ/Tucson/#
+Username : azmshpub
 ```
 
 ## Troubleshooting
@@ -155,9 +160,6 @@ Check `ALLOWED_ORIGINS` in `.env` — it must exactly match the URL you're using
 ping 10.45.72.250
 nc -zv 10.45.72.250 4403
 ```
-
-**mqtt-proxy keeps restarting**
-It waits for MeshMonitor's healthcheck (Virtual Node on port 4404). Give MeshMonitor 30–60 seconds to fully start after boot before worrying about mqtt-proxy.
 
 **Reset MeshMonitor data**
 ```bash

@@ -74,39 +74,6 @@ services:
         max-file: "2"
 
   # ---------------------------------------------------------------------------
-  # MQTT Proxy — bridges MeshMonitor's Virtual Node to an upstream MQTT broker
-  # Forwards mesh traffic to/from the public Meshtastic MQTT network
-  #
-  # NOTE: Requires Virtual Node to be enabled in MeshMonitor Dashboard first:
-  #   Dashboard → Sources → Edit → Virtual Node → Enable → set port 4404
-  # mqtt-proxy will retry automatically once port 4404 is listening.
-  # ---------------------------------------------------------------------------
-  mqtt-proxy:
-    image: ghcr.io/ln4cy/mqtt-proxy:master
-    container_name: mqtt-proxy
-    restart: unless-stopped
-    networks:
-      - meshtastic_net
-    environment:
-      - INTERFACE_TYPE=tcp
-      - TCP_NODE_HOST=meshmonitor
-      - TCP_NODE_PORT=4404
-      - MQTT_BROKER=${MQTT_BROKER:-mqtt.meshtastic.org}
-      - MQTT_PORT=${MQTT_PORT:-1883}
-      - MQTT_USERNAME=${MQTT_USERNAME:-meshdev}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-large4cats}
-      - MQTT_TOPIC=${MQTT_TOPIC:-msh/US/2/e/LongFast/#}
-    depends_on:
-      - meshmonitor
-    tmpfs:
-      - /tmp:size=10M
-    logging:
-      driver: local
-      options:
-        max-size: "100k"
-        max-file: "2"
-
-  # ---------------------------------------------------------------------------
   # Auto-upgrade is handled by a cron job installed by setup.sh
   # (Watchtower was removed — archived upstream, incompatible with Docker 29+)
   # To manually upgrade: docker compose pull && docker compose up -d

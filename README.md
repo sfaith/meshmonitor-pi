@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.1.4-blue)
+![Version](https://img.shields.io/badge/version-0.1.5-blue)
 
 Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.org/) — optimized for SD card longevity and hands-off operation.
 
@@ -8,9 +8,8 @@ Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.or
 | Container | Purpose |
 |---|---|
 | `meshmonitor` | Web dashboard — connects to Meshtastic node via TCP |
-| `mqtt-proxy` | Bridges MeshMonitor's Virtual Node to upstream MQTT broker |
 
-Auto-upgrades are handled by a daily cron job (installed by `setup.sh`), replacing Watchtower which was archived upstream and is incompatible with Docker Engine 29+.
+MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sources → Add → MQTT. No sidecar needed.
 
 Serial bridge is pre-stubbed in `docker-compose.yml` for future use — see [Adding a Serial Node](#adding-a-serial-node).
 

@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.2"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.5"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -101,8 +101,6 @@ prompt SESSION_SECRET      "Session secret        " "${SESSION_SECRET:-}"
 prompt MESHTASTIC_NODE_IP  "Meshtastic node IP    " "${MESHTASTIC_NODE_IP:-10.45.72.250}"
 prompt MESHTASTIC_NODE_PORT "Meshtastic port      " "${MESHTASTIC_NODE_PORT:-4403}"
 prompt TZ                  "Timezone              " "${TZ:-America/Phoenix}"
-prompt MQTT_BROKER         "MQTT broker           " "${MQTT_BROKER:-mqtt.meshtastic.org}"
-prompt MQTT_TOPIC          "MQTT topic            " "${MQTT_TOPIC:-msh/US/2/e/LongFast/#}"
 prompt UPGRADE_TIME        "Auto-upgrade time     " "${UPGRADE_TIME:-03:00}"
 
 # Derive ALLOWED_ORIGINS from PI_IP and HOST_PORT
@@ -136,11 +134,6 @@ MESHTASTIC_NODE_PORT=${MESHTASTIC_NODE_PORT}
 
 TZ=${TZ}
 
-MQTT_BROKER=${MQTT_BROKER}
-MQTT_PORT=${MQTT_PORT:-1883}
-MQTT_USERNAME=${MQTT_USERNAME:-meshdev}
-MQTT_PASSWORD=${MQTT_PASSWORD:-large4cats}
-MQTT_TOPIC=${MQTT_TOPIC}
 UPGRADE_TIME=${UPGRADE_TIME:-03:00}
 
 # SERIAL_DEVICE=/dev/ttyACM0
@@ -379,7 +372,7 @@ info "Step 7/7 — Start MeshMonitor Stack"
 cd "$SCRIPT_DIR"
 
 if confirm "Pull latest images and start the stack now?
-    NOTE: Downloads MeshMonitor and mqtt-proxy images (~300MB).
+    NOTE: Downloads MeshMonitor image (~250MB).
           Requires internet access. The stack will start automatically on
           future reboots via the systemd service installed in step 6.
     Recommended: y"; then

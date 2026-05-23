@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-05-23
+
+### Removed
+- mqtt-proxy sidecar — node already publishes MQTT directly; MeshMonitor 4.0
+  supports MQTT as a native source via Dashboard → Sources → Add → MQTT
+- MQTT-related env vars (MQTT_BROKER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD,
+  MQTT_TOPIC) removed from env.example and setup.sh
+
 ## [0.1.4] - 2026-05-23
 
 ### Fixed

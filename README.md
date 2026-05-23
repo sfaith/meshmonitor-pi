@@ -170,6 +170,10 @@ docker volume rm meshmonitor-pi_meshmonitor-data
 docker compose up -d
 ```
 
+## Maintenance
+
+Periodically check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes that may affect this deployment — particularly env var renames or removals, new required variables, healthcheck endpoint changes, and Docker image tag changes. Our `ENABLE_VIRTUAL_NODE` removal in v0.1.4 is an example of the kind of upstream change to watch for.
+
 ## References
 
 - [MeshMonitor Documentation](https://meshmonitor.org/)

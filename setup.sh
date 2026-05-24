@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.7"
+echo "  MeshMonitor Pi — First-Boot Setup v0.1.9"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -266,41 +266,62 @@ fi
 # -----------------------------------------------------------------------------
 info "Step 5/7 — Hardware Watchdog"
 
-# The Pi 4 has a built-in hardware watchdog (bcm2835_wdt).
-# If the OS hangs and stops petting the watchdog, the Pi hard-reboots.
-# This catches full system freezes that no software monitor can recover from.
+# On Raspberry Pi OS Bookworm, systemd automatically claims /dev/watchdog at
+# boot and pets it as long as PID 1 is healthy. This is strictly better than
+# the userspace watchdog daemon — it catches kernel panics and init freezes.
+# We detect which approach is in use and configure accordingly.
 
-if systemctl is-active --quiet watchdog 2>/dev/null; then
-  success "Hardware watchdog already active."
-else
-  if confirm "Enable hardware watchdog (auto-reboot on system hang)?
-    NOTE: Uses the Pi 4's built-in hardware watchdog chip. If the OS freezes
+WATCHDOG_HANDLED=false
+
+# Check if systemd already owns the watchdog (Bookworm default behaviour)
+if sudo dmesg 2>/dev/null | grep -q "Using hardware watchdog"; then
+  success "Hardware watchdog active — managed by systemd (Broadcom BCM2835)."
+  WATCHDOG_HANDLED=true
+
+  # Ensure dtparam=watchdog=on is in config.txt so it persists across reboots
+  if grep -q 'dtparam=watchdog=on' /boot/firmware/config.txt 2>/dev/null; then
+    success "dtparam=watchdog=on already set in /boot/firmware/config.txt."
+  else
+    echo "dtparam=watchdog=on" | sudo tee -a /boot/firmware/config.txt > /dev/null
+    success "dtparam=watchdog=on added to /boot/firmware/config.txt."
+  fi
+fi
+
+# Fall back to userspace watchdog daemon if systemd isn't handling it
+if [[ "$WATCHDOG_HANDLED" == "false" ]]; then
+  if systemctl is-active --quiet watchdog 2>/dev/null; then
+    success "Userspace watchdog daemon already active."
+  else
+    if confirm "Enable hardware watchdog (auto-reboot on system hang)?
+    NOTE: Uses the Pi's built-in hardware watchdog chip. If the OS freezes
           completely (kernel panic, memory corruption, etc.) the Pi will
-          automatically hard-reboot after 15 seconds — no human intervention
-          needed. Has no effect during normal operation.
+          automatically hard-reboot — no human intervention needed.
+          Has no effect during normal operation.
     Recommended: y"; then
-    # Install watchdog daemon if needed
-    if ! command -v watchdog &>/dev/null; then
-      sudo apt-get install -y watchdog
-    fi
+      # Ensure dtparam=watchdog=on is set
+      if ! grep -q 'dtparam=watchdog=on' /boot/firmware/config.txt 2>/dev/null; then
+        echo "dtparam=watchdog=on" | sudo tee -a /boot/firmware/config.txt > /dev/null
+        success "dtparam=watchdog=on added to /boot/firmware/config.txt."
+      fi
 
-    # Configure watchdog
-    sudo tee /etc/watchdog.conf > /dev/null <<'WEOF'
+      # Install and configure userspace watchdog daemon
+      if ! command -v watchdog &>/dev/null; then
+        sudo apt-get install -y watchdog
+      fi
+      sudo tee /etc/watchdog.conf > /dev/null <<'WEOF'
 # MeshMonitor Pi — hardware watchdog configuration
 watchdog-device = /dev/watchdog
 watchdog-timeout = 15
 interval = 5
 max-load-1 = 24
 WEOF
-
-    # Enable the kernel module and service
-    sudo modprobe bcm2835_wdt
-    echo 'bcm2835_wdt' | sudo tee /etc/modules-load.d/bcm2835_wdt.conf > /dev/null
-    sudo systemctl enable watchdog
-    sudo systemctl start watchdog
-    success "Hardware watchdog enabled. Pi will auto-reboot if OS hangs."
-  else
-    warn "Skipped hardware watchdog."
+      echo 'bcm2835_wdt' | sudo tee /etc/modules-load.d/bcm2835_wdt.conf > /dev/null
+      sudo systemctl enable watchdog
+      sudo systemctl start watchdog
+      success "Hardware watchdog daemon enabled."
+    else
+      warn "Skipped hardware watchdog."
+    fi
   fi
 fi
 

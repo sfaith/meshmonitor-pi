@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: On Pi OS Bookworm, systemd automatically claims /dev/watchdog
+  at boot — the userspace watchdog daemon fails with errno 16 (device busy) even
+  though the hardware watchdog IS active and working. Step 5 now detects systemd
+  watchdog ownership via dmesg and reports it as correctly configured rather than
+  attempting a conflicting daemon install. Falls back to daemon install on older
+  systems where systemd does not handle it.
+- setup.sh step 5: Added dtparam=watchdog=on to /boot/firmware/config.txt to
+  ensure hardware watchdog persists correctly across reboots on all Pi models.
+
 ## [0.1.8] - 2026-05-23
 
 ### Added

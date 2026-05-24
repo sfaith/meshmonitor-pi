@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: Switch watchdog detection to `sudo fuser /dev/watchdog0`.
+  Checks direct kernel state (PID 1 = systemd holds the device) rather than
+  parsing logs. Reliable regardless of journal storage mode or dmesg restrictions.
+  Previous journalctl approach failed because volatile journal doesn't retain
+  early boot messages from before the journal service fully initialised.
+
 ## [0.2.2] - 2026-05-23
 
 ### Fixed

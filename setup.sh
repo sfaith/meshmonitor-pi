@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.2.2"
+echo "  MeshMonitor Pi — First-Boot Setup v0.2.3"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -274,9 +274,10 @@ info "Step 5/7 — Hardware Watchdog"
 WATCHDOG_HANDLED=false
 
 # Check if systemd already owns the watchdog (Bookworm default behaviour).
-# Capture journal output first to avoid pipefail trapping journalctl exit codes.
-JOURNAL_OUT=$(journalctl -b 2>/dev/null || true)
-if echo "$JOURNAL_OUT" | grep -q "Using hardware watchdog"; then
+# fuser /dev/watchdog0 returns PID 1 (systemd) if it holds the device open.
+# This is the most reliable detection method — direct kernel state, no log parsing.
+WATCHDOG_OWNER=$(sudo fuser /dev/watchdog0 2>/dev/null || true)
+if [[ "$WATCHDOG_OWNER" == "1" ]] || echo "$WATCHDOG_OWNER" | grep -q "^1$"; then
   success "Hardware watchdog active — managed by systemd (Broadcom BCM2835)."
   WATCHDOG_HANDLED=true
 

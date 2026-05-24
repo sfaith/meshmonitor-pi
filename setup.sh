@@ -69,7 +69,7 @@ menu() {
   local i=1
   for opt in "$@"; do
     if [[ "$i" == "$default" ]]; then
-      echo "    ${i}) ${opt}  (recommended)"
+      echo "    ${i}) ${opt}  ← default"
     else
       echo "    ${i}) ${opt}"
     fi
@@ -581,9 +581,8 @@ for i in $(seq 1 "$NODE_COUNT"); do
   addr_var="NODE_${i}_BLE_ADDRESS"
   dev_var="NODE_${i}_SERIAL_DEVICE" baud_var="NODE_${i}_BAUD"
   node_type="${!t_var:-}"  node_name="${!n_var:-Node ${i}}"
-  echo
   echo "NODE_${i}_TYPE=${node_type}"
-  echo "NODE_${i}_NAME=${node_name}"
+  echo "NODE_${i}_NAME=\"${node_name}\""
   case "$node_type" in
     tcp)    echo "NODE_${i}_IP=${!ip_var:-}"; echo "NODE_${i}_PORT=${!port_var:-4403}" ;;
     ble)    echo "NODE_${i}_BLE_ADDRESS=${!addr_var:-}" ;;

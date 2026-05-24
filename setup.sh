@@ -909,9 +909,11 @@ print_bridge_box() {
   local ble_c=0 ser_c=0 has_bridges=false
   for i in $(seq 1 "$NODE_COUNT"); do
     t_var="NODE_${i}_TYPE"
-    [[ "${!t_var:-}" == "ble" || "${!t_var:-}" == "serial" ]] && has_bridges=true
+    if [[ "${!t_var:-}" == "ble" || "${!t_var:-}" == "serial" ]]; then
+      has_bridges=true
+    fi
   done
-  [[ "$has_bridges" == "false" ]] && return
+  [[ "$has_bridges" == "false" ]] && return 0
 
   echo "  ╔══════════════════════════════════════════════════════╗"
   echo "  ║  ⚠️  ACTION REQUIRED — ADD YOUR BRIDGE NODES         ║"
@@ -951,7 +953,7 @@ print_bridge_box() {
 
 # ── Password box — first run only ────────────────────────────────────────────
 print_password_box() {
-  is_first_run || return
+  is_first_run || return 0
   cat <<EOF
 
   ╔══════════════════════════════════════════════════════╗

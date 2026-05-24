@@ -359,32 +359,32 @@ add_ble_node() {
     echo "    • Powered on and nearby (within ~10 meters)"
     echo "    • Not connected to another phone or app"
     echo
-    echo "  If your device has a PIN or passkey, watch the screen"
-    echo "  — a 6-digit code may appear. Type it here when prompted."
+    echo "  You will now be dropped into a bluetoothctl session."
+    echo "  Run these commands:"
     echo
+    echo "    scan on"
+    echo "    (wait for ${ble_name:-your device} to appear)"
+    echo "    pair ${ble_addr}"
+    echo "    trust ${ble_addr}"
+    echo "    exit"
+    echo
+    echo "  If a PIN appears on your device screen, type it when prompted."
     echo "  Power cycle your device first if pairing is rejected."
     echo
-    echo -en "  Ready to pair? (press Enter to continue or Ctrl+C to abort): "
+    echo -en "  Press Enter to launch bluetoothctl: "
     read -r _
     echo
 
-    # Register a Bluetooth agent so PIN prompts appear in this terminal
-    bluetoothctl agent on &>/dev/null
-    bluetoothctl default-agent &>/dev/null
+    # Hand control directly to bluetoothctl — full interactive PIN support
+    bluetoothctl
 
-    local pair_ok=false
-    if bluetoothctl pair "$ble_addr" && \
-       bluetoothctl trust "$ble_addr"; then
-      pair_ok=true
-      success "Paired and trusted: ${ble_addr}"
+    echo
+    if bluetoothctl info "$ble_addr" 2>/dev/null | grep -q "Paired: yes"; then
+      success "Pairing confirmed: ${ble_addr}"
     else
-      warn "Pairing failed or was rejected."
-      warn "Try power cycling your device and re-running setup.sh."
-    fi
-
-    if [[ "$pair_ok" == "false" ]]; then
-      warn "The bridge may still connect but PIN-protected devices"
-      warn "will likely fail to send data without pairing."
+      warn "Pairing not detected. The bridge may still connect but"
+      warn "PIN-protected devices will likely fail to send data."
+      warn "Re-run setup.sh and pair again if the connection fails."
     fi
   else
     warn "Skipping pairing. If the device has a PIN, the bridge"

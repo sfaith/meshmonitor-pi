@@ -11,8 +11,6 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sources → Add → MQTT. No sidecar needed.
 
-Serial bridge is pre-stubbed in `docker-compose.yml` for future use — see [Adding a Serial Node](#adding-a-serial-node).
-
 ## Hardware
 
 ### Tested Configuration
@@ -161,7 +159,7 @@ docker compose restart meshmonitor
 
 ## Auto-Upgrade
 
-A cron job installed by `setup.sh` runs `docker compose pull && docker compose up -d` daily at 3 AM (`America/Phoenix`). When a new image is available it pulls it and recreates the container, removing the old layer to reclaim SD space.
+A cron job installed by `setup.sh` runs `./launch.sh pull && ./launch.sh up -d` daily at 3 AM (`America/Phoenix`). When a new image is available it pulls it and recreates the container, removing the old layer to reclaim SD space.
 
 To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `setup.sh` to reinstall the cron job.
 
@@ -210,7 +208,7 @@ curl -v telnet://YOUR_NODE_IP:4403
 ```bash
 docker compose down
 docker volume rm meshmonitor-pi_meshmonitor-data
-docker compose up -d
+./launch.sh up -d
 ```
 
 ## Maintenance

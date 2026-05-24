@@ -273,7 +273,7 @@ info "Step 5/7 — Hardware Watchdog"
 
 WATCHDOG_HANDLED=false
 
-# Check if systemd already owns the watchdog (Bookworm default behaviour).
+# Check if systemd already owns the watchdog (Bookworm default behavior).
 # fuser /dev/watchdog0 returns PID 1 (systemd) if it holds the device open.
 # This is the most reliable detection method — direct kernel state, no log parsing.
 WATCHDOG_OWNER=$(sudo fuser /dev/watchdog0 2>/dev/null | tr -d ' ' || true)

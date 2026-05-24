@@ -900,7 +900,7 @@ print_node_summary() {
   echo "  ─────────────────────────────────────────────────────"
 }
 
-# ── Bridge action box ─────────────────────────────────────────────────────────
+# ── Bridge action block ───────────────────────────────────────────────────────
 print_bridge_box() {
   local ble_c=0 ser_c=0 has_bridges=false
   for i in $(seq 1 "$NODE_COUNT"); do
@@ -911,40 +911,39 @@ print_bridge_box() {
   done
   [[ "$has_bridges" == "false" ]] && return 0
 
-  echo "  ╔══════════════════════════════════════════════════════╗"
-  echo "  ║  ⚠️  ACTION REQUIRED — ADD YOUR BRIDGE NODES         ║"
-  echo "  ║                                                      ║"
-  echo "  ║  Your bridge containers are running but              ║"
-  echo "  ║  MeshMonitor doesn't know about them yet.            ║"
-  echo "  ║                                                      ║"
-  echo "  ║  For each node below, go to:                         ║"
-  echo "  ║  Dashboard → Sources → Add Source → TCP              ║"
-  echo "  ║                                                      ║"
-  echo "  ║  NOTE: Even though these are Bluetooth/serial        ║"
-  echo "  ║  nodes, you add them as TCP sources — the bridge     ║"
-  echo "  ║  translates the connection behind the scenes.        ║"
-  echo "  ║                                                      ║"
+  echo "  ── ACTION REQUIRED — ADD YOUR BRIDGE NODES ──────────"
+  echo
+  echo "  Your bridge containers are running but MeshMonitor"
+  echo "  doesn't know about them yet."
+  echo
+  echo "  For each node below, go to:"
+  echo "  Dashboard → Sources → Add Source → TCP"
+  echo
+  echo "  NOTE: Even though these are Bluetooth/serial nodes,"
+  echo "  you add them as TCP sources — the bridge translates"
+  echo "  the connection behind the scenes."
+  echo
   for i in $(seq 1 "$NODE_COUNT"); do
     t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
     node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
     case "$node_type" in
       ble)
         ble_c=$(( ble_c + 1 ))
-        echo "  ║  BLE — ${node_name}"
-        echo "  ║    Host : meshmonitor-ble-${ble_c}"
-        echo "  ║    Port : 4403"
-        echo "  ║"
+        echo "  BLE — ${node_name}"
+        echo "    Host : meshmonitor-ble-${ble_c}"
+        echo "    Port : 4403"
+        echo
         ;;
       serial)
         ser_c=$(( ser_c + 1 ))
-        echo "  ║  Serial — ${node_name}"
-        echo "  ║    Host : meshmonitor-serial-${ser_c}"
-        echo "  ║    Port : 4403"
-        echo "  ║"
+        echo "  Serial — ${node_name}"
+        echo "    Host : meshmonitor-serial-${ser_c}"
+        echo "    Port : 4403"
+        echo
         ;;
     esac
   done
-  echo "  ╚══════════════════════════════════════════════════════╝"
+  echo "  ─────────────────────────────────────────────────────"
 }
 
 # ── Password box — first run only ────────────────────────────────────────────

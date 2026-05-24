@@ -657,7 +657,7 @@ if [[ -f "$DOCKER_DAEMON" ]]; then
   echo "  Overwrite with MeshMonitor Pi log limits?"
   echo "  NOTE: Per-container limits in docker-compose.yml apply regardless."
   menu DAEMON_CHOICE 1 \
-    "No  — contents match, keep as-is  (recommended)" \
+    "No  — contents match, keep as-is" \
     "Yes — overwrite with repo version"
   if [[ "$DAEMON_CHOICE" == "2" ]]; then
     sudo cp "$DAEMON_JSON" "$DOCKER_DAEMON"
@@ -779,6 +779,7 @@ if [[ "$START_CHOICE" == "1" ]]; then
   cd "$SCRIPT_DIR"
   chmod +x "$LAUNCH_SH"
   "$LAUNCH_SH" pull
+  echo
   "$LAUNCH_SH" up -d
 
   echo

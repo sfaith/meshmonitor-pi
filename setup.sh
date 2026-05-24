@@ -354,38 +354,33 @@ add_ble_node() {
 
   if [[ "$PAIR_CHOICE" == "1" ]]; then
     echo
-    echo "  ── Pairing ${ble_name:-device} ───────────────────────────"
-    echo "  Make sure your device is:"
-    echo "    • Powered on and nearby (within ~10 meters)"
-    echo "    • Not connected to another phone or app"
+    echo "  ── Bluetooth Pairing ────────────────────────────────"
+    echo "  Pairing must be done in a separate terminal session."
     echo
-    echo -en "  Ready to pair? (press Enter to continue or Ctrl+C to abort): "
+    echo "  Open a second SSH session to the Pi and run:"
+    echo
+    echo "    bluetoothctl"
+    echo "    scan on"
+    echo "    (wait for ${ble_name:-your device} to appear)"
+    echo "    pair ${ble_addr}"
+    echo "    trust ${ble_addr}"
+    echo "    exit"
+    echo
+    echo "  If your device has a PIN or passkey:"
+    echo "    • Watch your device screen — a 6-digit code may appear"
+    echo "    • Type it into the bluetoothctl prompt when asked"
+    echo
+    echo "  Power cycle your device first if pairing is rejected."
+    echo
+    echo -en "  Press Enter here when pairing is complete (or Ctrl+C to abort): "
     read -r _
     echo
-    echo "  Watch your device screen — enter any code that appears below."
-    echo
-    local pair_ok=false attempts=0
-    while [[ "$pair_ok" == "false" ]] && [[ "$attempts" -lt 3 ]]; do
-      if bluetoothctl pair "$ble_addr" 2>/dev/null && \
-         bluetoothctl trust "$ble_addr" 2>/dev/null; then
-        pair_ok=true
-        success "Paired and trusted: ${ble_addr}"
-      else
-        attempts=$(( attempts + 1 ))
-        warn "Pairing attempt ${attempts} failed or timed out."
-        if [[ "$attempts" -lt 3 ]]; then
-          echo
-          menu RETRY_CHOICE 1 \
-            "Retry pairing" \
-            "Skip pairing and connect anyway"
-          [[ "$RETRY_CHOICE" == "2" ]] && break
-        fi
-      fi
-    done
-    if [[ "$pair_ok" == "false" ]]; then
-      warn "Pairing did not complete. The bridge may still connect"
+    if bluetoothctl info "$ble_addr" 2>/dev/null | grep -q "Paired: yes"; then
+      success "Pairing confirmed: ${ble_addr}"
+    else
+      warn "Could not confirm pairing. The bridge may still connect"
       warn "but PIN-protected devices will likely fail to send data."
-      warn "You can re-run setup.sh to try pairing again."
+      warn "Re-run setup.sh and pair again if the connection fails."
     fi
   else
     warn "Skipping pairing. If the device has a PIN, the bridge"

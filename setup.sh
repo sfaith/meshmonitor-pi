@@ -336,16 +336,23 @@ add_ble_node() {
   eval "NODE_${idx}_TYPE=ble"
 
   echo
-  echo "  Does this device require Bluetooth pairing?"
-  echo "  NOTE: Most Meshtastic devices do NOT require pairing."
-  echo "        Try without pairing first — if connection fails,"
-  echo "        re-run setup.sh and choose to pair."
+  echo "  ── Bluetooth Pairing ────────────────────────────────"
+  echo "  Pairing ensures a stable connection, especially if"
+  echo "  your device has a custom PIN or passkey set."
+  echo
+  echo "  If your device has a PIN or passkey:"
+  echo "    • Watch your device screen — a 6-digit code may appear"
+  echo "    • Type it here when prompted"
+  echo "    • If no code appears, just press Enter to continue"
+  echo
+  echo "  If your device has no PIN, pairing still recommended"
+  echo "  but can be skipped if the device doesn't support it."
   echo
   menu PAIR_CHOICE 1 \
-    "No, connect without pairing" \
-    "Yes, pair now using bluetoothctl"
+    "Pair now  (recommended for PIN/passkey devices)" \
+    "Skip pairing  (only for devices with no PIN)"
 
-  if [[ "$PAIR_CHOICE" == "2" ]]; then
+  if [[ "$PAIR_CHOICE" == "1" ]]; then
     echo
     echo "  ── Pairing ${ble_name:-device} ───────────────────────────"
     echo "  Make sure your device is:"
@@ -355,23 +362,35 @@ add_ble_node() {
     echo -en "  Ready to pair? (press Enter to continue or Ctrl+C to abort): "
     read -r _
     echo
-    echo "  NOTE: If a 6-digit code appears on your device screen,"
-    echo "        you may be prompted to confirm it below."
-    echo "        Type 'yes' and press Enter if the codes match."
+    echo "  Watch your device screen — enter any code that appears below."
     echo
     local pair_ok=false attempts=0
-    while [[ "$pair_ok" == "false" ]] && [[ "$attempts" -lt 2 ]]; do
-      if bluetoothctl pair "$ble_addr" && bluetoothctl trust "$ble_addr"; then
+    while [[ "$pair_ok" == "false" ]] && [[ "$attempts" -lt 3 ]]; do
+      if bluetoothctl pair "$ble_addr" 2>/dev/null && \
+         bluetoothctl trust "$ble_addr" 2>/dev/null; then
         pair_ok=true
         success "Paired and trusted: ${ble_addr}"
       else
         attempts=$(( attempts + 1 ))
-        warn "Pairing timed out or failed."
-        echo
-        menu RETRY_CHOICE 1 "Retry pairing" "Skip pairing and connect without it"
-        [[ "$RETRY_CHOICE" == "2" ]] && break
+        warn "Pairing attempt ${attempts} failed or timed out."
+        if [[ "$attempts" -lt 3 ]]; then
+          echo
+          menu RETRY_CHOICE 1 \
+            "Retry pairing" \
+            "Skip pairing and connect anyway"
+          [[ "$RETRY_CHOICE" == "2" ]] && break
+        fi
       fi
     done
+    if [[ "$pair_ok" == "false" ]]; then
+      warn "Pairing did not complete. The bridge may still connect"
+      warn "but PIN-protected devices will likely fail to send data."
+      warn "You can re-run setup.sh to try pairing again."
+    fi
+  else
+    warn "Skipping pairing. If the device has a PIN, the bridge"
+    warn "may connect but fail to exchange data with MeshMonitor."
+    warn "Re-run setup.sh and choose to pair if this happens."
   fi
   success "BLE node ${idx} configured: ${ble_addr}"
 }
@@ -407,6 +426,116 @@ add_serial_node() {
   else warn "Device ${dev_val} not found — ensure it is plugged in."; fi
   eval "NODE_${idx}_TYPE=serial"
   success "Serial node ${idx} configured: ${dev_val}"
+}
+
+remove_node() {
+  echo
+  echo "  ── Remove a Node ────────────────────────────────────"
+  if [[ "$NODE_COUNT" -eq 0 ]]; then
+    warn "No nodes configured."; return
+  fi
+  echo
+  for i in $(seq 1 "$NODE_COUNT"); do
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+    addr_var="NODE_${i}_BLE_ADDRESS" dev_var="NODE_${i}_SERIAL_DEVICE"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    case "$node_type" in
+      tcp)    echo "    ${i}) TCP    — ${!ip_var:-?}:${!port_var:-4403} (${node_name})" ;;
+      ble)    echo "    ${i}) BLE    — ${!addr_var:-?} (${node_name})" ;;
+      serial) echo "    ${i}) Serial — ${!dev_var:-?} (${node_name})" ;;
+    esac
+  done
+  local last=$(( NODE_COUNT + 1 ))
+  echo "    ${last}) Cancel"
+  echo -en "\n  Which node to remove [${last}]: "
+  read -r RM_CHOICE
+  [[ -z "$RM_CHOICE" ]] && RM_CHOICE="$last"
+  if ! [[ "$RM_CHOICE" =~ ^[0-9]+$ ]] || \
+     [[ "$RM_CHOICE" -lt 1 ]] || \
+     [[ "$RM_CHOICE" -gt "$last" ]]; then
+    warn "Invalid choice."; return
+  fi
+  [[ "$RM_CHOICE" -eq "$last" ]] && return
+
+  local ridx="$RM_CHOICE"
+  local t_var="NODE_${ridx}_TYPE" n_var="NODE_${ridx}_NAME"
+  local node_type="${!t_var:-}" node_name="${!n_var:-Node ${ridx}}"
+  local addr_var="NODE_${ridx}_BLE_ADDRESS"
+  local ble_addr="${!addr_var:-}"
+
+  echo
+  echo "  Remove Node ${ridx}: ${node_name} (${node_type})?"
+  menu CONFIRM_REMOVE 2 "Yes, remove this node" "No, cancel"
+  [[ "$CONFIRM_REMOVE" == "2" ]] && return
+
+  # BLE — unpair from host and stop bridge container
+  if [[ "$node_type" == "ble" ]] && [[ -n "$ble_addr" ]]; then
+    echo
+    echo "  Removing Bluetooth pairing for ${ble_addr}..."
+    bluetoothctl remove "$ble_addr" 2>/dev/null || true
+    success "Bluetooth pairing removed."
+
+    local ble_idx=0
+    for j in $(seq 1 "$ridx"); do
+      t_j="NODE_${j}_TYPE"
+      [[ "${!t_j:-}" == "ble" ]] && ble_idx=$(( ble_idx + 1 ))
+    done
+    local container="meshmonitor-ble-${ble_idx}"
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+      docker stop "$container" 2>/dev/null || true
+      docker rm "$container" 2>/dev/null || true
+      success "Bridge container ${container} removed."
+    fi
+
+    echo
+    echo "  ── MeshMonitor Source ────────────────────────────────"
+    echo "  If you added this node as a source in MeshMonitor,"
+    echo "  remove it manually:"
+    echo "    Dashboard → Sources → ${node_name} → Delete"
+    echo "  ─────────────────────────────────────────────────────"
+  fi
+
+  # Serial — stop and remove bridge container
+  if [[ "$node_type" == "serial" ]]; then
+    local ser_idx=0
+    for j in $(seq 1 "$ridx"); do
+      t_j="NODE_${j}_TYPE"
+      [[ "${!t_j:-}" == "serial" ]] && ser_idx=$(( ser_idx + 1 ))
+    done
+    local container="meshmonitor-serial-${ser_idx}"
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+      docker stop "$container" 2>/dev/null || true
+      docker rm "$container" 2>/dev/null || true
+      success "Bridge container ${container} removed."
+    fi
+
+    echo
+    echo "  ── MeshMonitor Source ────────────────────────────────"
+    echo "  If you added this node as a source in MeshMonitor,"
+    echo "  remove it manually:"
+    echo "    Dashboard → Sources → ${node_name} → Delete"
+    echo "  ─────────────────────────────────────────────────────"
+  fi
+
+  # Renumber remaining nodes by rebuilding env vars
+  echo
+  echo "  ── Stack will restart in step 8 to apply changes ────"
+  local new_count=0
+  for i in $(seq 1 "$NODE_COUNT"); do
+    [[ "$i" -eq "$ridx" ]] && continue
+    new_count=$(( new_count + 1 ))
+    for suffix in TYPE NAME IP PORT BLE_ADDRESS SERIAL_DEVICE BAUD; do
+      src_var="NODE_${i}_${suffix}"
+      [[ -n "${!src_var:-}" ]] && eval "NODE_${new_count}_${suffix}='${!src_var}'"
+    done
+  done
+  # Clear the last node slot
+  for suffix in TYPE NAME IP PORT BLE_ADDRESS SERIAL_DEVICE BAUD; do
+    eval "NODE_$(( new_count + 1 ))_${suffix}=''"
+  done
+  NODE_COUNT="$new_count"
+  success "Node ${ridx} (${node_name}) removed. ${NODE_COUNT} node(s) remaining."
 }
 
 test_all_nodes() {
@@ -488,7 +617,7 @@ if [[ "$NODE_COUNT" -gt 0 ]]; then
     "Add a BLE (Bluetooth) node" \
     "Add a serial/USB node" \
     "Test connectivity on all nodes" \
-    "Edit or remove a node  (coming in a future version)"
+    "Remove a node"
 else
   echo
   echo "  No nodes configured yet."
@@ -517,7 +646,7 @@ case "$NODE_ACTION" in
   3) add_ble_node    "$NEXT_NODE" && NODE_COUNT=$(( NODE_COUNT + 1 )) || true ;;
   4) add_serial_node "$NEXT_NODE" && NODE_COUNT=$(( NODE_COUNT + 1 )) || true ;;
   5) test_all_nodes; ADD_MORE=false ;;
-  6) warn "Edit/remove is not yet available. Coming in a future version."; ADD_MORE=false ;;
+  6) remove_node; ADD_MORE=false ;;
 esac
 
 # ── Add more nodes loop ───────────────────────────────────────────────────────

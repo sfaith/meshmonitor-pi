@@ -54,6 +54,7 @@ Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/softw
    - Set a hostname (e.g. `meshmonitor`), username, and password
    - Configure WiFi if not using Ethernet
    - On the **Services** tab: **Enable SSH** → **Use password authentication**
+   - Advanced users may prefer key-based authentication — the wizard supports either
 5. Click **Save** → **Yes** → **Yes** to write
 
 **2. Boot, find IP, and reserve it**

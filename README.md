@@ -1,7 +1,7 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.1.7-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%204-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
+![Version](https://img.shields.io/badge/version-0.1.8-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
-Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.org/) — optimized for SD card longevity and hands-off operation.
+A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
 ## What's Included
 
@@ -12,6 +12,55 @@ Raspberry Pi 4 (arm64) Docker deployment of [MeshMonitor](https://meshmonitor.or
 MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sources → Add → MQTT. No sidecar needed.
 
 Serial bridge is pre-stubbed in `docker-compose.yml` for future use — see [Adding a Serial Node](#adding-a-serial-node).
+
+## Hardware
+
+### Tested Configuration
+
+| Component | Used |
+|---|---|
+| **Board** | Raspberry Pi 4 (4 GB RAM) |
+| **SD card** | 32 GB Samsung Endurance Pro |
+| **OS** | Raspberry Pi OS Lite 64-bit (bookworm) |
+| **IP assignment** | DHCP reservation in router (no static config on Pi) |
+
+### RAM
+
+MeshMonitor's Node.js process typically uses 200–350 MB at runtime. With OS and Docker overhead the total is around 700–900 MB, leaving 3+ GB free on a 4 GB Pi. The free RAM is used by the OS as a file cache, which actually reduces SD reads.
+
+| RAM | Verdict |
+|---|---|
+| 1 GB | ⚠️ Tight — may work but leaves little headroom |
+| 2 GB | ✅ Comfortable for this single-container stack |
+| 4 GB | ✅ Tested — plenty of headroom |
+| 8 GB | ✅ No issues |
+
+### Supported Boards
+
+| Board | Architecture | Status |
+|---|---|---|
+| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup, but setup.sh targets 64-bit OS |
+| Pi 4 (any RAM) | arm64 | ✅ Tested |
+| Pi 5 | arm64 | ✅ Should work — same architecture, faster; no known issues |
+| Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
+
+If you run this on a Pi 3B+ or Pi 5, please open an issue and let us know how it goes.
+
+### SD Card
+
+SD card quality matters more than size for a 24/7 appliance. Cheap cards fail under continuous low-level writes even with our write minimization in place.
+
+**Recommended (in order):**
+- Samsung Endurance Pro — designed for dashcams and surveillance, highest write endurance
+- SanDisk High Endurance — same use case, excellent choice
+- Samsung Endurance (non-Pro) — good
+- SanDisk Extreme — general purpose but solid
+
+**Avoid:** SanDisk Ultra, Kingston, unbranded or Amazon Basics cards.
+
+**Size:** 32 GB is the sweet spot. The full stack (OS + Docker + images + database) uses around 6 GB. 16 GB works but leaves less room for image churn during upgrades. Larger cards (64 GB+) offer no benefit and budget-tier large cards often have worse endurance than mid-size ones.
+
+---
 
 ## SD Card Write Minimization
 
@@ -25,12 +74,16 @@ Five layers of protection keep writes off the SD card:
 
 The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker volume) and Docker image layers pulled during upgrades.
 
+---
+
 ## Prerequisites
 
-- Raspberry Pi 4 running **Raspberry Pi OS Lite 64-bit** (bookworm)
+- Raspberry Pi running **Raspberry Pi OS Lite 64-bit** (bookworm)
 - Network connectivity (Ethernet recommended for reliability)
 - Meshtastic node reachable on your LAN via TCP (port 4403)
-- Static IP assigned to the Pi in your router's DHCP settings
+- Static IP assigned to the Pi via your router's DHCP reservation
+
+---
 
 ## First-Time Setup
 

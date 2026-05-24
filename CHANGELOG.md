@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: Capture journalctl output into a variable before grepping
+  to avoid set -euo pipefail trapping journalctl's exit code inside a pipe.
+  Previous approach `journalctl -b | grep -q` failed silently under pipefail
+  even though journalctl was working correctly interactively.
+
 ## [0.2.1] - 2026-05-23
 
 ### Fixed

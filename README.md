@@ -10,20 +10,20 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 1. Flash **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+) via Raspberry Pi Imager with SSH and password authentication enabled
 2. Reserve a static DHCP IP for your Pi in your router
-3. SSH in and run:
+3. SSH in, update OS and reboot:
    ```bash
-   sudo apt update && sudo apt full-upgrade -y && \
+   sudo apt update && sudo apt full-upgrade -y && sudo reboot
+   ```
+4. SSH back in, install dependencies and run setup:
+   ```bash
    sudo apt install -y git curl openssl bluez && \
    git clone https://github.com/sfaith/meshmonitor-pi.git && \
    cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
    ./setup.sh
    ```
-4. When setup completes, reboot to apply SD card optimizations:
-   ```bash
-   sudo reboot
-   ```
-5. Verify the stack came back up: `docker ps` — both `meshmonitor` and any bridge containers should show running
-6. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
+5. Reboot to apply SD card optimizations: `sudo reboot`
+6. Verify: `docker ps` — meshmonitor should show healthy
+7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
 
@@ -72,32 +72,34 @@ ssh yourusername@192.168.1.X
 ```
 Replace `yourusername` with the username you set in the Imager, and `192.168.1.X` with your Pi's IP address.
 
-### 4. Run the bootstrap command
-Paste this full block into the terminal — it updates the OS, installs dependencies, clones the repo, and launches the setup wizard automatically:
-
+### 4. Update the OS and reboot
 ```bash
-sudo apt update && sudo apt full-upgrade -y && \
+sudo apt update && sudo apt full-upgrade -y && sudo reboot
+```
+Wait for the Pi to reboot, then SSH back in.
+
+### 5. Install dependencies and run setup
+```bash
 sudo apt install -y git curl openssl bluez && \
 git clone https://github.com/sfaith/meshmonitor-pi.git && \
 cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
 ./setup.sh
 ```
+The wizard will walk you through all settings and start the stack automatically.
 
-> The OS upgrade may take a few minutes. The wizard will launch automatically when it's done. The stack will be running by the time the wizard completes.
-
-### 5. Reboot
+### 6. Reboot
 ```bash
 sudo reboot
 ```
 This applies SD card optimizations (`noatime`, tmpfs `/var/log`) configured during setup. The stack starts automatically on reboot via systemd — no manual action needed.
 
-### 6. Verify the stack came back up
+### 7. Verify the stack came back up
 ```bash
 docker ps
 ```
 The `meshmonitor` container should show `healthy`. Any BLE or serial bridge containers will also appear here.
 
-### 7. Open the web UI
+### 8. Open the web UI
 Navigate to `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately** via the top-right menu.
 
 See the sections below for hardware recommendations, adding nodes, and troubleshooting.
@@ -190,17 +192,24 @@ The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker 
 
 In your router's DHCP settings, find the Pi's MAC address and assign it a permanent IP reservation. The Pi itself uses normal DHCP — the reservation just ensures it always gets the same address. Note that IP — you'll need it when running `setup.sh`.
 
-### 2. Install dependencies and clone this repo onto the Pi
+### 2. Update the OS and reboot
 
 ```bash
-sudo apt update && sudo apt full-upgrade -y
+sudo apt update && sudo apt full-upgrade -y && sudo reboot
+```
+
+Wait for the Pi to reboot, then SSH back in. This ensures any kernel or OS updates are fully applied before we install anything.
+
+### 3. Install dependencies and clone this repo
+
+```bash
 sudo apt install -y git curl openssl bluez
 git clone https://github.com/sfaith/meshmonitor-pi.git
 cd meshmonitor-pi
 chmod +x setup.sh launch.sh scan-ble.sh
 ```
 
-### 3. Run setup
+### 4. Run setup
 
 ```bash
 ./setup.sh
@@ -216,7 +225,7 @@ openssl rand -hex 32
 
 Set `SESSION_SECRET=<output>` in `.env` — setup.sh will detect and keep it.
 
-### 4. Reboot
+### 5. Reboot
 
 ```bash
 sudo reboot
@@ -224,7 +233,7 @@ sudo reboot
 
 This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`) configured during setup. The stack restarts automatically via systemd — no manual action needed.
 
-### 5. Verify the stack came back up
+### 6. Verify the stack came back up
 
 ```bash
 docker ps
@@ -234,7 +243,7 @@ The `meshmonitor` container should show `healthy`. Any BLE or serial bridge cont
 
 `setup.sh` is safe to re-run at any time — all steps check before acting and skip anything already configured.
 
-### 6. Change the default password
+### 7. Change the default password
 
 Open `http://<PI_IP>:8080` in a browser, log in with `admin` / `changeme`, and immediately change the password via the top-right menu.
 

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-05-24
+
+### Fixed
+- launch.sh: Generated compose now references network as
+  `meshmonitor-pi_meshtastic_net` (the actual Docker-assigned name) rather
+  than declaring it external without a name — fixes "network could not be
+  found" error when starting bridge containers
+- launch.sh: Added `--progress=tty` to restore animated Docker pull output
+
 ## [0.3.1] - 2026-05-24
 
 ### Fixed

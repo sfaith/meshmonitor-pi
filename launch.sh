@@ -139,6 +139,7 @@ ${BRIDGE_SERVICES}
 networks:
   meshtastic_net:
     external: true
+    name: meshmonitor-pi_meshtastic_net
 EOF
 fi
 
@@ -156,4 +157,4 @@ echo "  ────────────────────────
 printf "%b" "$BRIDGE_SUMMARY"
 echo "  ─────────────────────────────────────────────────────"
 
-exec $COMPOSE_CMD "$@"
+exec $COMPOSE_CMD --progress=tty "$@"

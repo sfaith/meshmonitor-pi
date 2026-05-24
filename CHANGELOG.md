@@ -9,10 +9,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - setup.sh: End-of-wizard node summary block — lists all configured nodes with
   a checkmark so users can confirm their setup at a glance
-- setup.sh: Bridge action-required box — prominent ╔══╗ box at end of wizard
-  listing each BLE/serial bridge container name, host, and port to add as a
-  TCP source in MeshMonitor Dashboard → Sources. Shown only when bridge nodes
-  are configured. Saved to ~/meshmonitor-next-steps.txt for later reference
+- setup.sh: Bridge action-required box — prominent box at end of wizard listing
+  each BLE/serial bridge container name, host, and port to add as a TCP source
+  in MeshMonitor Dashboard → Sources. Shown only when bridge nodes are
+  configured. Saved to ~/meshmonitor-next-steps.txt for later reference
 - setup.sh: OPTIONAL section (Virtual Node, permissions) removed from terminal
   output — retained in ~/meshmonitor-next-steps.txt only
 
@@ -28,6 +28,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - setup.sh: "Add more nodes" BLE scan results loop now validates user input —
   rejects non-numeric and out-of-range entries to prevent blank MAC address
   being written to .env silently
+- setup.sh: Post-setup output refactored to use direct print functions —
+  eliminates variable interpolation artifacts that caused box rendering issues
+- setup.sh: set -e safe returns in print functions — prevents early script exit
+  when no bridge nodes are configured
 
 ### Changed
 - README: Serial node section rewritten — replace stale manual .env/compose

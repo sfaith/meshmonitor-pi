@@ -203,7 +203,7 @@ Check `ALLOWED_ORIGINS` in `.env` — it must exactly match the URL you're using
 **MeshMonitor can't connect to the node**
 ```bash
 ping YOUR_NODE_IP
-nc -zv YOUR_NODE_IP 4403
+curl -v telnet://YOUR_NODE_IP:4403
 ```
 
 **Reset MeshMonitor data**

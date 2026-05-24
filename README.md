@@ -91,13 +91,13 @@ The wizard will walk you through all settings and start the stack automatically.
 ```bash
 sudo reboot
 ```
-This applies SD card optimizations (`noatime`, tmpfs `/var/log`) configured during setup. The stack starts automatically on reboot via systemd — no manual action needed.
+This applies SD card optimizations configured during setup. The stack starts automatically on reboot — no manual action needed.
 
 ### 7. Verify the stack came back up
 ```bash
 docker ps
 ```
-The `meshmonitor` container should show `healthy`. Any BLE or serial bridge containers will also appear here.
+The `meshmonitor` container should show `healthy`.
 
 ### 8. Open the web UI
 Navigate to `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately** via the top-right menu.

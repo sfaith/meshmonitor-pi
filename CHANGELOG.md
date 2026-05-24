@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-05-23
+
+### Added
+- README: Hardware section covering tested configuration, board compatibility
+  table (Pi 3B/4/5/Zero 2W), RAM requirements and estimates, and SD card
+  selection guidance (recommended brands, size rationale)
+- README: Platform badge updated to cover all Pi models (not just Pi 4)
+- README: Horizontal rule separators between major sections for readability
+- README: Prerequistes section restored with cleaner wording
+
+### Changed
+- README: section order — Hardware → SD Card Write Minimization → Prerequisites
+  → First-Time Setup (was: SD Card → Prerequisites)
+- README: description updated to reflect multi-board scope
+
 ## [0.1.7] - 2026-05-23
 
 ### Fixed

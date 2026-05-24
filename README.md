@@ -168,6 +168,14 @@ To check the upgrade log:
 cat ~/meshmonitor-upgrade.log
 ```
 
+## Adding a BLE Node
+
+Re-run `./setup.sh` and choose **"Add a BLE (Bluetooth) node"** from the Node Connections menu. The wizard will scan for nearby Meshtastic devices, let you select one, and configure the bridge automatically.
+
+Make sure your Meshtastic device is:
+- Powered on and within ~10 meters of the Pi
+- Not actively connected to another phone or app
+
 ## Adding a Serial Node
 
 Re-run `./setup.sh` and choose **"Add a serial/USB node"** from the Node Connections menu. The wizard will detect your device, walk you through the configuration, and restart the stack automatically.

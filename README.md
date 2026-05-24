@@ -3,10 +3,12 @@
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
+---
+
 ## Quick Start
 
 <details>
-<summary>Already know what you're doing? Click here for the short version.</summary>
+<summary>⚡ Quick install — expand if you know your way around a Pi</summary>
 
 1. Flash **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+) via Raspberry Pi Imager with SSH and password authentication enabled
 2. Reserve a static DHCP IP for your Pi in your router
@@ -14,105 +16,93 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    ```bash
    sudo apt update && sudo apt full-upgrade -y && sudo reboot
    ```
-4. SSH back in, install dependencies and run setup:
+4. SSH back in, install dependencies, run setup, and reboot:
    ```bash
    sudo apt install -y git curl openssl bluez && \
    git clone https://github.com/sfaith/meshmonitor-pi.git && \
    cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
-   ./setup.sh
+   ./setup.sh && sudo reboot
    ```
-5. Reboot to apply SD card optimizations: `sudo reboot`
-6. Verify: `docker ps` — meshmonitor should show healthy
-7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
+5. Verify: `docker ps` — meshmonitor should show healthy
+6. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
 
 ---
 
-> **New to Raspberry Pi?** You'll need to be comfortable with:
-> - Accessing your router's admin page to find your Pi's IP address
-> - Using a terminal application to connect to your Pi via SSH
->   (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/) — Mac/Linux: Terminal)
->
-> If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
+> **New to Raspberry Pi?** You'll need to be comfortable with accessing your router's admin page and connecting to the Pi via SSH (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/) — Mac/Linux: Terminal). If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
 
 ### What you need
-- A Raspberry Pi — see the [Hardware](#hardware) section for board and SD card recommendations
+- A Raspberry Pi — see [Hardware](#hardware) for board and SD card recommendations
 - A computer to write the SD card
 - Your Pi connected to your router via Ethernet or WiFi
-
-### 1. Write the SD card
-Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) on your computer. Open it and:
-
-1. Click **Choose Device** and select your Pi model
-2. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite**
-   - Pi 4 or 5: choose the **64-bit** version
-   - Pi 3B / 3B+: choose the **32-bit** version
-3. Click **Choose Storage** and select your SD card
-4. Click **Next** — when asked about OS customization settings, click **Edit Settings**:
-   - Set a hostname (e.g. `meshmonitor`)
-   - Set a username and password — you'll use these to log in via SSH
-   - Configure WiFi credentials if not using Ethernet
-   - On the **Services** tab, check **Enable SSH** and select **Use password authentication**
-   - Advanced users may prefer key-based authentication — the wizard supports either
-5. Click **Save** → **Yes** → **Yes** to write the card
-
-### 2. Boot the Pi and find its IP
-Insert the SD card, connect Ethernet if using it, and power on. After about a minute find the Pi's IP address in your router's connected devices list.
-
-While you're in your router, assign the Pi a **permanent DHCP reservation** — this makes sure your Pi always gets the same address on your network so you can always find it. Note the IP address down.
-
-### 3. SSH into the Pi
-Open a terminal on your computer and connect to the Pi:
-- **Windows:** open Windows Terminal or PuTTY and connect to your Pi's IP address
-- **Mac / Linux:** open Terminal
-
-```bash
-ssh yourusername@192.168.1.X
-```
-Replace `yourusername` with the username you set in the Imager, and `192.168.1.X` with your Pi's IP address.
-
-### 4. Update the OS and reboot
-```bash
-sudo apt update && sudo apt full-upgrade -y && sudo reboot
-```
-Wait for the Pi to reboot, then SSH back in.
-
-### 5. Install dependencies and run setup
-```bash
-sudo apt install -y git curl openssl bluez && \
-git clone https://github.com/sfaith/meshmonitor-pi.git && \
-cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
-./setup.sh
-```
-The wizard will walk you through all settings and start the stack automatically.
-
-### 6. Reboot
-```bash
-sudo reboot
-```
-This applies SD card optimizations configured during setup. The stack starts automatically on reboot — no manual action needed.
-
-### 7. Verify the stack came back up
-```bash
-docker ps
-```
-The `meshmonitor` container should show `healthy`.
-
-### 8. Open the web UI
-Navigate to `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately** via the top-right menu.
-
-See the sections below for hardware recommendations, adding nodes, and troubleshooting.
+- At least one Meshtastic node — TCP is the simplest; BLE and serial also supported
 
 ---
 
-## What's Included
+### Phase 1 — Get the Pi ready
 
-| Container | Purpose |
-|---|---|
-| `meshmonitor` | Web dashboard — connects to Meshtastic nodes via TCP, serial, or BLE |
+**1. Write the SD card**
 
-MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sources → Add → MQTT. No sidecar needed.
+Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Open it and:
+
+1. Click **Choose Device** → select your Pi model
+2. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite**
+   - Pi 4 or 5: **64-bit** — Pi 3B/3B+: **32-bit**
+3. Click **Choose Storage** → select your SD card
+4. Click **Next** → **Edit Settings**:
+   - Set a hostname (e.g. `meshmonitor`), username, and password
+   - Configure WiFi if not using Ethernet
+   - On the **Services** tab: **Enable SSH** → **Use password authentication**
+5. Click **Save** → **Yes** → **Yes** to write
+
+**2. Boot, find IP, and reserve it**
+
+Insert the SD card and power on. After about a minute, find the Pi's IP in your router's connected devices list. While you're there, assign it a **permanent DHCP reservation** so it always gets the same address.
+
+**3. SSH in and update the OS**
+
+```bash
+ssh yourusername@192.168.1.X
+sudo apt update && sudo apt full-upgrade -y && sudo reboot
+```
+
+Wait for the Pi to reboot, then SSH back in. This ensures all OS updates are applied before installing anything.
+
+---
+
+### Phase 2 — Install MeshMonitor
+
+**4. Install dependencies and run setup**
+
+```bash
+sudo apt install -y git curl openssl bluez
+git clone https://github.com/sfaith/meshmonitor-pi.git
+cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh
+./setup.sh
+```
+
+The wizard hardens the OS, installs Docker, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
+
+**5. Reboot to apply OS hardening**
+
+```bash
+sudo reboot
+```
+
+This applies the SD card optimizations (`noatime`, tmpfs `/var/log`) configured during setup. The stack restarts automatically — no manual action needed.
+
+**6. Verify and open the web UI**
+
+```bash
+docker ps   # meshmonitor should show healthy
+```
+
+Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the password immediately**.
+
+> `setup.sh` is safe to re-run at any time. To supply your own session secret, run `openssl rand -hex 32`, set `SESSION_SECRET=<output>` in `.env`, then run setup.
+
+---
 
 ## Hardware
 
@@ -123,232 +113,98 @@ MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sour
 | **Board** | Raspberry Pi 4 (4 GB RAM) |
 | **SD card** | 32 GB Samsung Endurance Pro |
 | **OS** | Raspberry Pi OS Lite 64-bit (bookworm) |
-| **IP assignment** | DHCP reservation in router (no static config on Pi) |
-
-### RAM
-
-MeshMonitor's Node.js process typically uses 200–350 MB at runtime. With OS and Docker overhead the total is around 700–900 MB, leaving 3+ GB free on a 4 GB Pi. The free RAM is used by the OS as a file cache, which actually reduces SD reads.
-
-| RAM | Verdict |
-|---|---|
-| 1 GB | ⚠️ Tight — may work but leaves little headroom |
-| 2 GB | ✅ Comfortable for this single-container stack |
-| 4 GB | ✅ Tested — plenty of headroom |
-| 8 GB | ✅ No issues |
 
 ### Supported Boards
 
 | Board | Architecture | Status |
 |---|---|---|
-| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup, but setup.sh targets 64-bit OS |
+| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup |
 | Pi 4 (any RAM) | arm64 | ✅ Tested |
-| Pi 5 | arm64 | ✅ Should work — same architecture, faster; no known issues |
+| Pi 5 | arm64 | ✅ Should work — same architecture, faster |
 | Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
 
-If you run this on a Pi 3B+ or Pi 5, please open an issue and let us know how it goes.
+### RAM
+
+| RAM | Verdict |
+|---|---|
+| 1 GB | ⚠️ Tight |
+| 2 GB | ✅ Comfortable |
+| 4 GB | ✅ Tested |
+| 8 GB | ✅ No issues |
 
 ### SD Card
 
-SD card quality matters more than size for a 24/7 appliance. Cheap cards fail under continuous low-level writes even with our write minimization in place.
-
-**Recommended (in order):**
-- Samsung Endurance Pro — designed for dashcams and surveillance, highest write endurance
-- SanDisk High Endurance — same use case, excellent choice
-- Samsung Endurance (non-Pro) — good
-- SanDisk Extreme — general purpose but solid
-
-**Avoid:** SanDisk Ultra, Kingston, unbranded or Amazon Basics cards.
-
-**Size:** 32 GB is the sweet spot. The full stack (OS + Docker + images + database) uses around 6 GB. 16 GB works but leaves less room for image churn during upgrades. Larger cards (64 GB+) offer no benefit and budget-tier large cards often have worse endurance than mid-size ones.
+Use an endurance-rated card — cheap cards fail under 24/7 low-level writes. **Recommended:** Samsung Endurance Pro, SanDisk High Endurance. **Avoid:** SanDisk Ultra, Kingston, unbranded. 32 GB is the sweet spot — the full stack uses around 6 GB.
 
 ---
 
 ## SD Card Write Minimization
 
-Five layers of protection keep writes off the SD card:
-
-1. **Docker `local` log driver** — capped at 100KB × 2 files per container
-2. **`daemon.json`** — system-wide Docker log cap as belt-and-suspenders
-3. **`ACCESS_LOG_ENABLED=false`** — kills HTTP access logging in MeshMonitor
-4. **tmpfs `/data/logs`** — MeshMonitor's audit log goes to RAM, never SD
-5. **OS hardening via `setup.sh`** — `noatime`, volatile systemd journal, tmpfs `/var/log`
-
-The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker volume) and Docker image layers pulled during upgrades.
+Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false`, tmpfs for MeshMonitor logs, and OS hardening (`noatime`, volatile journal, tmpfs `/var/log`) — all applied automatically by `setup.sh`. The only necessary writes are the SQLite database and Docker image layers during upgrades.
 
 ---
-
-## Prerequisites
-
-- Raspberry Pi running **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+)
-- Network connectivity (Ethernet recommended for reliability)
-- At least one Meshtastic node — connected via WiFi/Ethernet (TCP), Bluetooth (BLE), or USB cable (serial). TCP is the simplest option if your node is on the same network as the Pi.
-- DHCP reservation configured in your router so the Pi always gets the same IP
-
----
-
-## First-Time Setup
-
-### 1. Reserve a static IP for the Pi
-
-In your router's DHCP settings, find the Pi's MAC address and assign it a permanent IP reservation. The Pi itself uses normal DHCP — the reservation just ensures it always gets the same address. Note that IP — you'll need it when running `setup.sh`.
-
-### 2. Update the OS and reboot
-
-```bash
-sudo apt update && sudo apt full-upgrade -y && sudo reboot
-```
-
-Wait for the Pi to reboot, then SSH back in. This ensures any kernel or OS updates are fully applied before we install anything.
-
-### 3. Install dependencies and clone this repo
-
-```bash
-sudo apt install -y git curl openssl bluez
-git clone https://github.com/sfaith/meshmonitor-pi.git
-cd meshmonitor-pi
-chmod +x setup.sh launch.sh scan-ble.sh
-```
-
-### 4. Run setup
-
-```bash
-./setup.sh
-```
-
-The wizard walks you through confirming all settings, hardens the OS, configures Docker, and starts the stack. By the time it completes, MeshMonitor is running.
-
-`setup.sh` generates a session secret automatically on first run — no manual step needed. If you prefer to supply your own, generate one and add it to `.env` before running setup:
-
-```bash
-openssl rand -hex 32
-```
-
-Set `SESSION_SECRET=<output>` in `.env` — setup.sh will detect and keep it.
-
-### 5. Reboot
-
-```bash
-sudo reboot
-```
-
-This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`) configured during setup. The stack restarts automatically via systemd — no manual action needed.
-
-### 6. Verify the stack came back up
-
-```bash
-docker ps
-```
-
-The `meshmonitor` container should show `healthy`. Any BLE or serial bridge containers will also appear here.
-
-`setup.sh` is safe to re-run at any time — all steps check before acting and skip anything already configured.
-
-### 7. Change the default password
-
-Open `http://<PI_IP>:8080` in a browser, log in with `admin` / `changeme`, and immediately change the password via the top-right menu.
 
 ## Day-to-Day Operations
 
-> **Note:** For most changes — adding nodes, updating settings — just re-run `./setup.sh`. The commands below are for day-to-day monitoring and maintenance.
+> For most changes — adding nodes, updating settings — just re-run `./setup.sh`.
 
 ```bash
-# Live logs (main container only)
-docker logs -f meshmonitor
-
-# Live logs (all containers including bridges)
-docker ps --format '{{.Names}}' | xargs -I{} docker logs -f {}
-
-# Status — all containers including bridges
-docker ps
-
-# Stop stack
-./launch.sh down
-
-# Manual upgrade (cron handles this automatically at 3 AM)
-./launch.sh pull && ./launch.sh up -d
-
-# Restart the stack (includes bridge containers)
-./launch.sh down && ./launch.sh up -d
+docker logs -f meshmonitor              # Live logs
+docker ps                               # Status (all containers)
+./launch.sh down                        # Stop stack
+./launch.sh pull && ./launch.sh up -d  # Manual upgrade
+./launch.sh down && ./launch.sh up -d  # Restart stack
+cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade
 ```
 
-## Auto-Upgrade
+Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`.
 
-The stack updates itself automatically every night at 3 AM — no action needed. When a new image is available it pulls it and restarts the containers.
-
-To check the last upgrade:
-```bash
-cat ~/meshmonitor-upgrade.log
-```
-
-To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `./setup.sh` to reinstall the cron job.
-
-To reclaim disk space from old image layers:
-```bash
-docker image prune -f
-```
+---
 
 ## Adding More Nodes
 
-Re-run `./setup.sh` and choose the appropriate option from the Node Connections menu. The wizard will walk you through configuration and restart the stack automatically.
+Re-run `./setup.sh` and choose the appropriate option from the Node Connections menu.
 
-### BLE (Bluetooth) Node
+**BLE node:** Device must be powered on, within ~10 meters, and not connected to another app.
 
-Make sure your Meshtastic device is:
-- Powered on and within ~10 meters of the Pi
-- Not actively connected to another phone or app
-
-### Serial (USB) Node
-
-Before running setup, make sure serial mode is enabled on your Meshtastic device. From a computer connected to the device:
-
+**Serial node:** Enable serial mode on the device first:
 ```bash
 meshtastic --set serial.enabled true
 meshtastic --set serial.mode SIMPLE
 ```
 
-## MQTT Integration
+---
 
-MeshMonitor 4.0 supports MQTT natively — no sidecar container needed. To add an MQTT source:
+## MQTT Integration
 
 **Dashboard → Sources → Add → MQTT**
 
-Enter your broker address, credentials, and topic. For the Arizona regional mesh (`azmsh.net`):
+For the Arizona regional mesh:
 ```
 Broker   : mqtt.azmsh.net
 Topic    : msh/US/AZ/Tucson/#
 Username : azmshpub
 ```
-*These are credentials for the Arizona regional mesh. Check your regional mesh community for the correct broker and topic.*
+*Check your regional mesh community for the correct broker and topic.*
+
+---
 
 ## Troubleshooting
 
-**Blank white screen in browser**
-Check `ALLOWED_ORIGINS` in `.env` — it must exactly match the URL you're using to access the UI, including the port.
+**Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port.
 
-**MeshMonitor can't connect to the node**
+**Node not connecting**
 ```bash
 ping YOUR_NODE_IP
 curl -v telnet://YOUR_NODE_IP:4403
 ```
 
-**UI stopped working after an overnight upgrade**
-
-Check the upgrade log first:
+**UI broke after overnight upgrade** — check the log, then the upstream CHANGELOG:
 ```bash
 cat ~/meshmonitor-upgrade.log
-```
-Then check container status and logs:
-```bash
-docker ps
 docker logs meshmonitor
 ```
-Check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes — env var renames or removals are the most common cause.
-
-If the image itself is broken, disable auto-upgrade while you wait for an upstream fix:
-```bash
-crontab -e
-```
-Comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to restore it when ready. Note: MeshMonitor does not publish versioned image tags, so rolling back is not possible — waiting for an upstream fix is the fastest path.
+To disable auto-upgrade temporarily: `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to restore.
 
 **Reset MeshMonitor data**
 ```bash
@@ -357,9 +213,13 @@ docker volume rm meshmonitor-pi_meshmonitor-data
 ./launch.sh up -d
 ```
 
+---
+
 ## Maintenance
 
-Periodically check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes that may affect this deployment — particularly env var renames or removals, new required variables, healthcheck endpoint changes, and Docker image tag changes. MeshMonitor moves quickly and upstream changes can occasionally require config updates.
+Check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) periodically — env var changes or new required variables can occasionally require a config update.
+
+---
 
 ## References
 

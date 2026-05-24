@@ -874,51 +874,93 @@ fi
 # -----------------------------------------------------------------------------
 # Post-setup communication
 # -----------------------------------------------------------------------------
+
+# Helper — print a fixed-width box line with left border only
+# Content is not right-padded — avoids all alignment math
+box_line()  { printf "  ║  %s\n" "$*"; }
+box_blank() { printf "  ║\n"; }
+
+# ── Build node summary ────────────────────────────────────────────────────────
+print_node_summary() {
+  local ble_c=0 ser_c=0
+  echo "  ── Configured nodes ──────────────────────────────────"
+  for i in $(seq 1 "$NODE_COUNT"); do
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    case "$node_type" in
+      tcp)
+        ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+        printf "  ✓  TCP    — %s:%s (%s)\n" "${!ip_var:-?}" "${!port_var:-4403}" "$node_name"
+        ;;
+      ble)
+        ble_c=$(( ble_c + 1 ))
+        printf "  ✓  BLE    — meshmonitor-ble-%d (%s)\n" "$ble_c" "$node_name"
+        ;;
+      serial)
+        ser_c=$(( ser_c + 1 ))
+        printf "  ✓  Serial — meshmonitor-serial-%d (%s)\n" "$ser_c" "$node_name"
+        ;;
+    esac
+  done
+  echo "  ─────────────────────────────────────────────────────"
+}
+
+# ── Build bridge action box ───────────────────────────────────────────────────
+print_bridge_box() {
+  local ble_c=0 ser_c=0 has_bridges=false
+  for i in $(seq 1 "$NODE_COUNT"); do
+    t_var="NODE_${i}_TYPE"
+    [[ "${!t_var:-}" == "ble" || "${!t_var:-}" == "serial" ]] && has_bridges=true
+  done
+  [[ "$has_bridges" == "false" ]] && return
+
+  echo "  ╔══════════════════════════════════════════════════════╗"
+  echo "  ║  ⚠️  ACTION REQUIRED — ADD YOUR BRIDGE NODES         ║"
+  echo "  ║                                                      ║"
+  echo "  ║  Your bridge containers are running but              ║"
+  echo "  ║  MeshMonitor doesn't know about them yet.            ║"
+  echo "  ║                                                      ║"
+  echo "  ║  For each node below, go to:                         ║"
+  echo "  ║  Dashboard → Sources → Add Source → TCP              ║"
+  echo "  ║                                                      ║"
+  echo "  ║  NOTE: Even though these are Bluetooth/serial        ║"
+  echo "  ║  nodes, you add them as TCP sources — the bridge     ║"
+  echo "  ║  translates the connection behind the scenes.        ║"
+  echo "  ║                                                      ║"
+
+  for i in $(seq 1 "$NODE_COUNT"); do
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    case "$node_type" in
+      ble)
+        ble_c=$(( ble_c + 1 ))
+        box_line "BLE — ${node_name}"
+        box_line "  Host : meshmonitor-ble-${ble_c}"
+        box_line "  Port : 4403"
+        box_blank
+        ;;
+      serial)
+        ser_c=$(( ser_c + 1 ))
+        box_line "Serial — ${node_name}"
+        box_line "  Host : meshmonitor-serial-${ser_c}"
+        box_line "  Port : 4403"
+        box_blank
+        ;;
+    esac
+  done
+
+  echo "  ╚══════════════════════════════════════════════════════╝"
+}
+
+# ── Assemble NEXT_STEPS ───────────────────────────────────────────────────────
 NEXT_STEPS=""
-BLE_BRIDGE_COUNT=0; SERIAL_BRIDGE_COUNT=0
 
-# ── Build node summary and bridge action lines ────────────────────────────────
-NODE_SUMMARY_LINES=""
-BRIDGE_ACTION_LINES=""
-
-for i in $(seq 1 "$NODE_COUNT"); do
-  t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-  node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
-  case "$node_type" in
-    tcp)
-      ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
-      NODE_SUMMARY_LINES+="  ✓  TCP    — ${!ip_var:-?}:${!port_var:-4403} (${node_name})\n"
-      ;;
-    ble)
-      BLE_BRIDGE_COUNT=$(( BLE_BRIDGE_COUNT + 1 ))
-      CONTAINER="meshmonitor-ble-${BLE_BRIDGE_COUNT}"
-      NODE_SUMMARY_LINES+="  ✓  BLE    — ${CONTAINER} (${node_name})\n"
-      BRIDGE_ACTION_LINES+="
-  ║  BLE — ${node_name}
-  ║    Host : ${CONTAINER}
-  ║    Port : 4403
-  ║"
-      ;;
-    serial)
-      SERIAL_BRIDGE_COUNT=$(( SERIAL_BRIDGE_COUNT + 1 ))
-      CONTAINER="meshmonitor-serial-${SERIAL_BRIDGE_COUNT}"
-      NODE_SUMMARY_LINES+="  ✓  Serial — ${CONTAINER} (${node_name})\n"
-      BRIDGE_ACTION_LINES+="
-  ║  Serial — ${node_name}
-  ║    Host : ${CONTAINER}
-  ║    Port : 4403
-  ║"
-      ;;
-  esac
-done
-
-# ── Node summary block ────────────────────────────────────────────────────────
+# Node summary
 NEXT_STEPS+="
-  ── Configured nodes ──────────────────────────────────
-$(printf "%b" "$NODE_SUMMARY_LINES")  ─────────────────────────────────────────────────────
+$(print_node_summary)
 "
 
-# ── Password box — first run only ────────────────────────────────────────────
+# Password box — first run only
 if is_first_run; then
   NEXT_STEPS+="
   ╔══════════════════════════════════════════════════════╗
@@ -937,27 +979,12 @@ if is_first_run; then
 "
 fi
 
-# ── Bridge action box ─────────────────────────────────────────────────────────
-if [[ $BLE_BRIDGE_COUNT -gt 0 ]] || [[ $SERIAL_BRIDGE_COUNT -gt 0 ]]; then
-  NEXT_STEPS+="
-  ╔══════════════════════════════════════════════════════╗
-  ║  ⚠️  ACTION REQUIRED — ADD YOUR BRIDGE NODES         ║
-  ║                                                      ║
-  ║  Your bridge containers are running but              ║
-  ║  MeshMonitor doesn't know about them yet.            ║
-  ║                                                      ║
-  ║  For each node below, go to:                         ║
-  ║  Dashboard → Sources → Add Source → TCP              ║
-  ║                                                      ║
-  ║  NOTE: Even though these are Bluetooth/serial        ║
-  ║  nodes, you add them as TCP sources — the bridge     ║
-  ║  translates the connection behind the scenes.        ║
-  ║                                                      ║${BRIDGE_ACTION_LINES}
-  ╚══════════════════════════════════════════════════════╝
+# Bridge action box
+NEXT_STEPS+="
+$(print_bridge_box)
 "
-fi
 
-# ── Troubleshooting ───────────────────────────────────────────────────────────
+# Troubleshooting and notes
 NEXT_STEPS+="
   ── TROUBLESHOOTING ───────────────────────────────────
 

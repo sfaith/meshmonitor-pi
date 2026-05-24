@@ -3,6 +3,30 @@
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
+## Quick Start
+
+1. **Reserve a static IP** for your Pi in your router's DHCP settings
+2. **Clone this repo** onto the Pi:
+   ```bash
+   git clone https://github.com/sfaith/meshmonitor-pi.git
+   cd meshmonitor-pi
+   chmod +x setup.sh
+   ```
+3. **Run the setup wizard** and follow the prompts:
+   ```bash
+   ./setup.sh
+   ```
+4. **Reboot** to apply SD card optimizations:
+   ```bash
+   sudo reboot
+   ```
+5. **Open the web UI** at `http://<PI_IP>:8080` and change the default password
+   (`admin` / `changeme`)
+
+That's it. The wizard handles Docker installation, node configuration, watchdog, and auto-upgrade automatically. See the sections below for hardware recommendations, adding nodes, and troubleshooting.
+
+---
+
 ## What's Included
 
 | Container | Purpose |

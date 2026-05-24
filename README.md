@@ -18,7 +18,12 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
    ./setup.sh
    ```
-4. Reboot, open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
+4. When setup completes, reboot to apply SD card optimizations:
+   ```bash
+   sudo reboot
+   ```
+5. Verify the stack came back up: `docker ps` — both `meshmonitor` and any bridge containers should show running
+6. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
 
@@ -78,15 +83,21 @@ cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
 ./setup.sh
 ```
 
-> The OS upgrade may take a few minutes. The wizard will launch automatically when it's done.
+> The OS upgrade may take a few minutes. The wizard will launch automatically when it's done. The stack will be running by the time the wizard completes.
 
 ### 5. Reboot
 ```bash
 sudo reboot
 ```
-This applies SD card optimizations configured during setup.
+This applies SD card optimizations (`noatime`, tmpfs `/var/log`) configured during setup. The stack starts automatically on reboot via systemd — no manual action needed.
 
-### 6. Open the web UI
+### 6. Verify the stack came back up
+```bash
+docker ps
+```
+The `meshmonitor` container should show `healthy`. Any BLE or serial bridge containers will also appear here.
+
+### 7. Open the web UI
 Navigate to `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately** via the top-right menu.
 
 See the sections below for hardware recommendations, adding nodes, and troubleshooting.
@@ -166,7 +177,7 @@ The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker 
 
 ## Prerequisites
 
-- Raspberry Pi running **Raspberry Pi OS Lite 64-bit** (bookworm)
+- Raspberry Pi running **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+)
 - Network connectivity (Ethernet recommended for reliability)
 - At least one Meshtastic node — connected via WiFi/Ethernet (TCP), Bluetooth (BLE), or USB cable (serial). TCP is the simplest option if your node is on the same network as the Pi.
 - DHCP reservation configured in your router so the Pi always gets the same IP
@@ -179,21 +190,23 @@ The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker 
 
 In your router's DHCP settings, find the Pi's MAC address and assign it a permanent IP reservation. The Pi itself uses normal DHCP — the reservation just ensures it always gets the same address. Note that IP — you'll need it when running `setup.sh`.
 
-### 2. Clone this repo onto the Pi
+### 2. Install dependencies and clone this repo onto the Pi
 
 ```bash
+sudo apt update && sudo apt full-upgrade -y
+sudo apt install -y git curl openssl bluez
 git clone https://github.com/sfaith/meshmonitor-pi.git
 cd meshmonitor-pi
+chmod +x setup.sh launch.sh scan-ble.sh
 ```
 
 ### 3. Run setup
 
 ```bash
-chmod +x setup.sh
 ./setup.sh
 ```
 
-The script will walk you through confirming all settings, harden the OS, configure Docker, and start the stack.
+The wizard walks you through confirming all settings, hardens the OS, configures Docker, and starts the stack. By the time it completes, MeshMonitor is running.
 
 `setup.sh` generates a session secret automatically on first run — no manual step needed. If you prefer to supply your own, generate one and add it to `.env` before running setup:
 
@@ -209,12 +222,11 @@ Set `SESSION_SECRET=<output>` in `.env` — setup.sh will detect and keep it.
 sudo reboot
 ```
 
-This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`).
+This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`) configured during setup. The stack restarts automatically via systemd — no manual action needed.
 
 ### 5. Verify the stack came back up
 
 ```bash
-cd meshmonitor-pi
 docker ps
 ```
 
@@ -331,14 +343,14 @@ Comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to resto
 
 **Reset MeshMonitor data**
 ```bash
-docker compose down
+./launch.sh down
 docker volume rm meshmonitor-pi_meshmonitor-data
 ./launch.sh up -d
 ```
 
 ## Maintenance
 
-Periodically check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes that may affect this deployment — particularly env var renames or removals, new required variables, healthcheck endpoint changes, and Docker image tag changes. Our `ENABLE_VIRTUAL_NODE` removal in v0.1.4 is an example of the kind of upstream change to watch for.
+Periodically check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes that may affect this deployment — particularly env var renames or removals, new required variables, healthcheck endpoint changes, and Docker image tag changes. MeshMonitor moves quickly and upstream changes can occasionally require config updates.
 
 ## References
 

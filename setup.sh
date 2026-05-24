@@ -875,12 +875,11 @@ fi
 # Post-setup communication
 # -----------------------------------------------------------------------------
 
-# Helper — print a fixed-width box line with left border only
-# Content is not right-padded — avoids all alignment math
+# Helper — print a box line with left border only
 box_line()  { printf "  ║  %s\n" "$*"; }
 box_blank() { printf "  ║\n"; }
 
-# ── Build node summary ────────────────────────────────────────────────────────
+# ── Node summary ──────────────────────────────────────────────────────────────
 print_node_summary() {
   local ble_c=0 ser_c=0
   echo "  ── Configured nodes ──────────────────────────────────"
@@ -905,7 +904,7 @@ print_node_summary() {
   echo "  ─────────────────────────────────────────────────────"
 }
 
-# ── Build bridge action box ───────────────────────────────────────────────────
+# ── Bridge action box ─────────────────────────────────────────────────────────
 print_bridge_box() {
   local ble_c=0 ser_c=0 has_bridges=false
   for i in $(seq 1 "$NODE_COUNT"); do
@@ -927,7 +926,6 @@ print_bridge_box() {
   echo "  ║  nodes, you add them as TCP sources — the bridge     ║"
   echo "  ║  translates the connection behind the scenes.        ║"
   echo "  ║                                                      ║"
-
   for i in $(seq 1 "$NODE_COUNT"); do
     t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
     node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
@@ -948,21 +946,14 @@ print_bridge_box() {
         ;;
     esac
   done
-
   echo "  ╚══════════════════════════════════════════════════════╝"
 }
 
-# ── Assemble NEXT_STEPS ───────────────────────────────────────────────────────
-NEXT_STEPS=""
+# ── Password box — first run only ────────────────────────────────────────────
+print_password_box() {
+  is_first_run || return
+  cat <<EOF
 
-# Node summary
-NEXT_STEPS+="
-$(print_node_summary)
-"
-
-# Password box — first run only
-if is_first_run; then
-  NEXT_STEPS+="
   ╔══════════════════════════════════════════════════════╗
   ║  ⚠️  ACTION REQUIRED — CHANGE YOUR PASSWORD NOW      ║
   ║                                                      ║
@@ -976,16 +967,13 @@ if is_first_run; then
   ║                                                      ║
   ║  Top-right menu → admin → Change Password            ║
   ╚══════════════════════════════════════════════════════╝
-"
-fi
+EOF
+}
 
-# Bridge action box
-NEXT_STEPS+="
-$(print_bridge_box)
-"
+# ── Static notes block ────────────────────────────────────────────────────────
+print_notes() {
+  cat <<EOF
 
-# Troubleshooting and notes
-NEXT_STEPS+="
   ── TROUBLESHOOTING ───────────────────────────────────
 
   BLE bridge not connecting?
@@ -1016,22 +1004,33 @@ NEXT_STEPS+="
 
   To view next steps at any time:
     cat ${NEXT_STEPS_FILE}
-"
+EOF
+}
 
+# ── Print to terminal ─────────────────────────────────────────────────────────
 echo
 echo "============================================================"
 echo "  Setup complete."
 echo "============================================================"
-printf "%s" "$NEXT_STEPS"
+echo
+print_node_summary
+print_password_box
+echo
+print_bridge_box
+print_notes
 echo "============================================================"
 
-# Write next-steps file
+# ── Write next-steps file ─────────────────────────────────────────────────────
 {
   echo "MeshMonitor Pi — Setup Notes"
   echo "Generated: $(date)"
   echo "Web UI: http://${PI_IP}:${HOST_PORT}"
   echo
-  printf "%s" "$NEXT_STEPS"
+  print_node_summary
+  print_password_box
+  echo
+  print_bridge_box
+  print_notes
 } > "$NEXT_STEPS_FILE"
 
 success "Next steps saved to ${NEXT_STEPS_FILE}"

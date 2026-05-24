@@ -221,7 +221,7 @@ add_tcp_node() {
   local port_var="NODE_${idx}_PORT"
   prompt "NODE_${idx}_PORT" "Node port          " "${!port_var:-4403}"
   local pv="${!port_var:-4403}"
-  if nc -zw2 "$ip_val" "$pv" &>/dev/null 2>&1; then success "Port ${pv} reachable OK"
+  if bash -c "echo >/dev/tcp/${ip_val}/${pv}" 2>/dev/null; then success "Port ${pv} reachable OK"
   else warn "Port ${pv} not reachable — node may not be ready yet."; fi
   eval "NODE_${idx}_TYPE=tcp"
   success "TCP node ${idx} configured: ${ip_val}:${pv}"
@@ -424,7 +424,7 @@ test_all_nodes() {
         if ping -c1 -W2 "$ip" &>/dev/null 2>&1; then echo " [OK]"
         else echo " [WARN] unreachable"; all_ok=false; fi
         printf "    Port %s..." "$port"
-        if nc -zw2 "$ip" "$port" &>/dev/null 2>&1; then echo " [OK]"
+        if bash -c "echo >/dev/tcp/${ip}/${port}" 2>/dev/null; then echo " [OK]"
         else echo " [WARN] not reachable"; all_ok=false; fi
         ;;
       ble)
@@ -836,7 +836,7 @@ if [[ "$START_CHOICE" == "1" ]]; then
       tcp)
         ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
         printf "  Node %d (%s — TCP): " "$i" "$node_name"
-        if nc -zw2 "${!ip_var:-}" "${!port_var:-4403}" &>/dev/null 2>&1; then
+        if bash -c "echo >/dev/tcp/${!ip_var:-}/${!port_var:-4403}" 2>/dev/null; then
           echo "[OK] connected"
         else echo "[WARN] not reachable — check node is online"; fi
         ;;
@@ -989,11 +989,6 @@ print_notes() {
   Community support:
     https://discord.gg/JVR3VBETQE
 
-  ── REBOOT REQUIRED ───────────────────────────────────
-
-  Run this now to apply SD card optimizations:
-    sudo reboot
-
   ── YOUR SETUP NOTES ──────────────────────────────────
 
   These instructions saved to: ${NEXT_STEPS_FILE}
@@ -1013,6 +1008,14 @@ echo "============================================================"
 echo
 print_node_summary
 print_password_box
+if is_first_run; then
+  echo
+  echo "  ── REBOOT REQUIRED ───────────────────────────────────"
+  echo
+  echo "  Run this now to apply SD card optimizations:"
+  echo "    sudo reboot"
+  echo
+fi
 echo
 print_bridge_box
 print_notes

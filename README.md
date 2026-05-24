@@ -125,10 +125,10 @@ This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`).
 
 ```bash
 cd meshmonitor-pi
-docker compose ps
+docker ps
 ```
 
-The container should show `running (healthy)`.
+The `meshmonitor` container should show `healthy`. Any BLE or serial bridge containers will also appear here.
 
 `setup.sh` is safe to re-run at any time — all steps check before acting and skip anything already configured.
 
@@ -141,20 +141,23 @@ Open `http://<PI_IP>:8080` in a browser, log in with `admin` / `changeme`, and i
 > **Note:** For most changes — adding nodes, updating settings — just re-run `./setup.sh`. The commands below are for day-to-day monitoring and maintenance.
 
 ```bash
-# Live logs
-docker compose logs -f
+# Live logs (main container only)
+docker logs -f meshmonitor
 
-# Status
-docker compose ps
+# Live logs (all containers including bridges)
+docker ps --format '{{.Names}}' | xargs -I{} docker logs -f {}
+
+# Status — all containers including bridges
+docker ps
 
 # Stop stack
-docker compose down
+./launch.sh down
 
 # Manual upgrade (cron handles this automatically at 3 AM)
 ./launch.sh pull && ./launch.sh up -d
 
-# Restart a single service
-docker compose restart meshmonitor
+# Restart the stack (includes bridge containers)
+./launch.sh down && ./launch.sh up -d
 ```
 
 ## Auto-Upgrade

@@ -435,10 +435,10 @@ if [[ "$NODE_COUNT" -gt 0 ]]; then
   echo
   echo "  ── Current node configuration ───────────────────────"
   for i in $(seq 1 "$NODE_COUNT"); do
-    local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-    local ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
-    local addr_var="NODE_${i}_BLE_ADDRESS" dev_var="NODE_${i}_SERIAL_DEVICE"
-    local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+    addr_var="NODE_${i}_BLE_ADDRESS" dev_var="NODE_${i}_SERIAL_DEVICE"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
     case "$node_type" in
       tcp)    echo "  Node ${i}: TCP    — ${!ip_var:-?}:${!port_var:-4403} (${node_name})" ;;
       ble)    echo "  Node ${i}: BLE    — ${!addr_var:-?} (${node_name})" ;;
@@ -497,13 +497,13 @@ while [[ "$ADD_MORE" == "true" ]]; do
     for i in "${!REMAINING_SCAN_ADDRS[@]}"; do
       echo "    $(( i + 1 ))) ${REMAINING_SCAN_NAMES[$i]}  —  ${REMAINING_SCAN_ADDRS[$i]}"
     done
-    local last=$(( ${#REMAINING_SCAN_ADDRS[@]} + 1 ))
+    last=$(( ${#REMAINING_SCAN_ADDRS[@]} + 1 ))
     echo "    ${last}) No — done adding nodes"
     echo -en "\n  Choice [${last}]: "
     read -r MORE_CHOICE
     [[ -z "$MORE_CHOICE" ]] && MORE_CHOICE="$last"
     if [[ "$MORE_CHOICE" -lt "$last" ]]; then
-      local ridx=$(( MORE_CHOICE - 1 ))
+      ridx=$(( MORE_CHOICE - 1 ))
       eval "NODE_${NEXT_NODE}_TYPE=ble"
       eval "NODE_${NEXT_NODE}_BLE_ADDRESS='${REMAINING_SCAN_ADDRS[$ridx]}'"
       eval "NODE_${NEXT_NODE}_NAME='${REMAINING_SCAN_NAMES[$ridx]}'"
@@ -541,10 +541,10 @@ if [[ "$NODE_COUNT" -eq 0 ]]; then
   echo "  No nodes configured — add via Dashboard → Sources after startup."
 else
   for i in $(seq 1 "$NODE_COUNT"); do
-    local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-    local ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
-    local addr_var="NODE_${i}_BLE_ADDRESS" dev_var="NODE_${i}_SERIAL_DEVICE"
-    local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+    addr_var="NODE_${i}_BLE_ADDRESS" dev_var="NODE_${i}_SERIAL_DEVICE"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
     case "$node_type" in
       tcp)    echo "  Node ${i}: TCP    — ${!ip_var:-?}:${!port_var:-4403} (${node_name})" ;;
       ble)    echo "  Node ${i}: BLE    — ${!addr_var:-?} (${node_name})" ;;
@@ -576,11 +576,11 @@ UPGRADE_TIME=${UPGRADE_TIME:-03:00}
 # Read by launch.sh. Loop-until-gap: read in order until NODE_N_TYPE is missing.
 EOF
 for i in $(seq 1 "$NODE_COUNT"); do
-  local t_var="NODE_${i}_TYPE"  n_var="NODE_${i}_NAME"
-  local ip_var="NODE_${i}_IP"   port_var="NODE_${i}_PORT"
-  local addr_var="NODE_${i}_BLE_ADDRESS"
-  local dev_var="NODE_${i}_SERIAL_DEVICE" baud_var="NODE_${i}_BAUD"
-  local node_type="${!t_var:-}"  node_name="${!n_var:-Node ${i}}"
+  t_var="NODE_${i}_TYPE"  n_var="NODE_${i}_NAME"
+  ip_var="NODE_${i}_IP"   port_var="NODE_${i}_PORT"
+  addr_var="NODE_${i}_BLE_ADDRESS"
+  dev_var="NODE_${i}_SERIAL_DEVICE" baud_var="NODE_${i}_BAUD"
+  node_type="${!t_var:-}"  node_name="${!n_var:-Node ${i}}"
   echo
   echo "NODE_${i}_TYPE=${node_type}"
   echo "NODE_${i}_NAME=${node_name}"
@@ -790,11 +790,11 @@ if [[ "$START_CHOICE" == "1" ]]; then
   echo "  ── Post-start connectivity ──────────────────────────"
   BLE_IDX=0; SERIAL_IDX=0
   for i in $(seq 1 "$NODE_COUNT"); do
-    local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-    local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+    t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+    node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
     case "$node_type" in
       tcp)
-        local ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+        ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
         printf "  Node %d (%s — TCP): " "$i" "$node_name"
         if nc -zw2 "${!ip_var:-}" "${!port_var:-4403}" &>/dev/null 2>&1; then
           echo "[OK] connected"
@@ -804,7 +804,7 @@ if [[ "$START_CHOICE" == "1" ]]; then
         BLE_IDX=$(( BLE_IDX + 1 ))
         CONTAINER="meshmonitor-ble-${BLE_IDX}"
         printf "  Node %d (%s — BLE bridge %d): " "$i" "$node_name" "$BLE_IDX"
-        local attempts=0 ready=false
+        attempts=0; ready=false
         while [[ $attempts -lt 6 ]]; do
           if docker exec "$CONTAINER" nc -z localhost 4403 &>/dev/null 2>&1; then
             ready=true; break
@@ -839,8 +839,8 @@ BLE_BRIDGE_STEPS="" SERIAL_BRIDGE_STEPS=""
 BLE_BRIDGE_COUNT=0; SERIAL_BRIDGE_COUNT=0
 
 for i in $(seq 1 "$NODE_COUNT"); do
-  local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-  local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+  t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+  node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
   case "$node_type" in
     ble)
       BLE_BRIDGE_COUNT=$(( BLE_BRIDGE_COUNT + 1 ))

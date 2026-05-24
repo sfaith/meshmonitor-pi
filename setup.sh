@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.0
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.1
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -92,7 +92,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.0"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.1"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -231,12 +231,8 @@ add_ble_node() {
   local idx="$1"
   echo
   echo "  ── BLE Node ─────────────────────────────────────────"
-  echo "  NOTE: Your Pi's Bluetooth adapter will connect to a"
-  echo "        nearby Meshtastic node (must be within ~10 meters)."
-  echo "        The bridge container requires privileged mode to"
-  echo "        access Bluetooth hardware — standard for BLE on Linux."
-  echo
-  prompt "NODE_${idx}_NAME" "Node name          " "BLE Node"
+  echo "  Connects a nearby Meshtastic node via Bluetooth."
+  echo "  Device must be powered on and within ~10 meters."
   echo
   echo "  Do you know your node's BLE MAC address?"
   menu BLE_MAC_CHOICE 1 \
@@ -246,23 +242,51 @@ add_ble_node() {
   local ble_addr="" ble_name=""
 
   if [[ "$BLE_MAC_CHOICE" == "1" ]]; then
+    # Ensure Bluetooth adapter is powered on
+    if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+      echo
+      echo "  Bluetooth adapter is off — enabling..."
+      sudo rfkill unblock bluetooth 2>/dev/null || true
+      sleep 2
+      sudo bluetoothctl power on 2>/dev/null || true
+      sleep 2
+      if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+        warn "Could not enable Bluetooth adapter. Check hardware and try again."
+        return 1
+      fi
+      success "Bluetooth adapter enabled."
+    fi
+
     echo
     echo "  Scanning for Meshtastic devices..."
-    echo "  (this may take 10-15 seconds)"
+    echo "  (this may take 10-15 seconds — press Ctrl+C to abort)"
     echo
-    SCAN_OUTPUT=$(docker run --rm --privileged \
+
+    docker run --rm --privileged \
       -v /var/run/dbus:/var/run/dbus \
       -v /var/lib/bluetooth:/var/lib/bluetooth:ro \
-      ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan 2>/dev/null || true)
+      ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan > /tmp/mm-ble-scan.txt 2>/dev/null &
+    SCAN_PID=$!
+    spinner='|/-\'
+    i=0
+    while kill -0 $SCAN_PID 2>/dev/null; do
+      printf "\r  Scanning... %s" "${spinner:$(( i % 4 )):1}"
+      i=$(( i + 1 ))
+      sleep 0.2
+    done
+    printf "\r  Scanning... done\n"
+    SCAN_OUTPUT=$(cat /tmp/mm-ble-scan.txt 2>/dev/null || true)
+    rm -f /tmp/mm-ble-scan.txt
 
     if [[ -z "$SCAN_OUTPUT" ]]; then
       warn "No Meshtastic devices found. Ensure device is powered on and in range."
       return 1
     fi
 
+    # Parse output format: "  NAME - MAC"
     declare -a SCAN_NAMES=() SCAN_ADDRS=()
     while IFS= read -r line; do
-      if [[ "$line" =~ Found.*:\ (.+)\ \(([0-9A-Fa-f:]{17})\) ]]; then
+      if [[ "$line" =~ ^[[:space:]]+(.+)[[:space:]]+-[[:space:]]+([0-9A-Fa-f:]{17})[[:space:]]*$ ]]; then
         SCAN_NAMES+=("${BASH_REMATCH[1]}")
         SCAN_ADDRS+=("${BASH_REMATCH[2]}")
       fi
@@ -273,6 +297,7 @@ add_ble_node() {
       return 1
     fi
 
+    echo
     echo "  Found devices:"
     for i in "${!SCAN_ADDRS[@]}"; do
       echo "    $(( i + 1 ))) ${SCAN_NAMES[$i]}  —  ${SCAN_ADDRS[$i]}"
@@ -287,6 +312,10 @@ add_ble_node() {
     ble_name="${SCAN_NAMES[$pidx]}"
     success "Selected: ${ble_name} (${ble_addr})"
 
+    # Name prompt after selection, defaulting to scanned device name
+    local name_var="NODE_${idx}_NAME"
+    prompt "$name_var" "Node name          " "${ble_name}"
+
     # Store remaining devices for "add another" loop
     REMAINING_SCAN_NAMES=()
     REMAINING_SCAN_ADDRS=()
@@ -299,6 +328,8 @@ add_ble_node() {
     prompt "NODE_${idx}_BLE_ADDRESS" "BLE MAC address    " ""
     local av="NODE_${idx}_BLE_ADDRESS"
     ble_addr="${!av:-}"
+    local name_var="NODE_${idx}_NAME"
+    prompt "$name_var" "Node name          " "BLE Node"
   fi
 
   eval "NODE_${idx}_BLE_ADDRESS='${ble_addr}'"

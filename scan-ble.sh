@@ -21,8 +21,23 @@ set -euo pipefail
 echo
 echo "  MeshMonitor Pi — BLE Device Scanner"
 echo "  ──────────────────────────────────────────────────────"
+
+# Ensure Bluetooth adapter is powered on
+if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+  echo "  Bluetooth adapter is off — enabling..."
+  sudo rfkill unblock bluetooth 2>/dev/null || true
+  sleep 2
+  sudo bluetoothctl power on 2>/dev/null || true
+  sleep 2
+  if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+    echo "[ERROR] Could not enable Bluetooth adapter. Check hardware."
+    exit 1
+  fi
+  echo "[OK]    Bluetooth adapter enabled."
+fi
+
 echo "  Scanning for nearby Meshtastic devices..."
-echo "  (this may take 10-15 seconds)"
+echo "  (this may take 10-15 seconds — press Ctrl+C to abort)"
 echo
 
 docker run --rm --privileged \

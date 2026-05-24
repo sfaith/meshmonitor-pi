@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-24
+
+### Fixed
+- setup.sh: BLE scan regex updated to match actual bridge output format
+  (`NAME - MAC` with dash separator, not `NAME (MAC)` with parentheses)
+- setup.sh: Bluetooth adapter auto-enabled before scan — detects soft-block
+  via rfkill and runs `sudo rfkill unblock bluetooth` + `bluetoothctl power on`
+  automatically so scan never fails due to powered-off adapter
+- setup.sh: Node name prompt moved to after device selection in BLE flow —
+  now defaults to the scanned device name instead of generic "BLE Node"
+- setup.sh: Removed "press Enter to accept" from node name prompt in BLE flow
+- setup.sh: Removed privileged mode NOTE from BLE header (implementation detail,
+  not actionable by user)
+- setup.sh: Added spinner progress indicator during BLE scan with Ctrl+C callout
+- setup.sh: Fixed REMAINING_SCAN_NAMES bug — was incorrectly populated from
+  SCAN_ADDRS instead of SCAN_NAMES
+- launch.sh: Fixed double banner — summary was printed twice (once for pull,
+  once for up -d) due to banner living before exec
+- CLAUDE.md: Removed stale references to docker-compose.ble.yml and start.sh
+
 ## [0.3.0] - 2026-05-23
 
 ### Added

@@ -145,14 +145,15 @@ fi
 # -----------------------------------------------------------------------------
 # Build and run compose command
 # -----------------------------------------------------------------------------
-echo "  MeshMonitor Pi — launching stack"
-echo "  ─────────────────────────────────────────────────────"
-printf "%b" "$BRIDGE_SUMMARY"
-echo "  ─────────────────────────────────────────────────────"
-
 COMPOSE_CMD="docker compose -f ${SCRIPT_DIR}/docker-compose.yml"
 if [[ "$HAS_BRIDGES" == "true" ]]; then
   COMPOSE_CMD+=" -f ${GENERATED_COMPOSE}"
 fi
+
+# Print summary once, then exec compose
+echo "  MeshMonitor Pi — launching stack"
+echo "  ─────────────────────────────────────────────────────"
+printf "%b" "$BRIDGE_SUMMARY"
+echo "  ─────────────────────────────────────────────────────"
 
 exec $COMPOSE_CMD "$@"

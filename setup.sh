@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.1.9"
+echo "  MeshMonitor Pi — First-Boot Setup v0.2.0"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -284,6 +284,18 @@ if sudo dmesg 2>/dev/null | grep -q "Using hardware watchdog"; then
   else
     echo "dtparam=watchdog=on" | sudo tee -a /boot/firmware/config.txt > /dev/null
     success "dtparam=watchdog=on added to /boot/firmware/config.txt."
+  fi
+
+  # Disable the userspace watchdog daemon if still present — systemd holds
+  # /dev/watchdog exclusively so the daemon can't open it anyway (errno 16)
+  # and leaves misleading "cannot open /dev/watchdog" errors in the journal.
+  WATCHDOG_ENABLED=false
+  systemctl is-enabled watchdog 2>/dev/null | grep -q "enabled" && WATCHDOG_ENABLED=true || true
+  if [[ "$WATCHDOG_ENABLED" == "true" ]]; then
+    warn "Disabling redundant userspace watchdog daemon (systemd handles this natively on Bookworm)."
+    sudo systemctl stop watchdog 2>/dev/null || true
+    sudo systemctl disable watchdog 2>/dev/null || true
+    success "Userspace watchdog daemon disabled."
   fi
 fi
 

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: When systemd owns the hardware watchdog, now also stops and
+  disables the userspace watchdog daemon if present. On Pi OS Bookworm, systemd
+  claims /dev/watchdog at boot so the daemon can never open it (errno 16), leaving
+  misleading error messages. The daemon is redundant and is cleanly removed.
+
+### Changed
+- Version bump to 0.2.0 — first fully verified, end-to-end tested deployment.
+  All components confirmed working: healthcheck, systemd service, hardware watchdog,
+  noatime, tmpfs mounts, volatile journal, Docker log limits, auto-upgrade cron.
+  Running MeshMonitor v4.6.6.
+
 ## [0.1.9] - 2026-05-23
 
 ### Fixed

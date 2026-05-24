@@ -10,11 +10,14 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - setup.sh step 5: On Pi OS Bookworm, systemd automatically claims /dev/watchdog
   at boot — the userspace watchdog daemon fails with errno 16 (device busy) even
   though the hardware watchdog IS active and working. Step 5 now detects systemd
-  watchdog ownership via dmesg and reports it as correctly configured rather than
-  attempting a conflicting daemon install. Falls back to daemon install on older
-  systems where systemd does not handle it.
+  watchdog ownership via dmesg and reports correctly rather than attempting a
+  conflicting daemon install. Falls back to daemon install on older systems.
 - setup.sh step 5: Added dtparam=watchdog=on to /boot/firmware/config.txt to
   ensure hardware watchdog persists correctly across reboots on all Pi models.
+- env.example: replaced hardcoded node IP (10.45.72.250) with YOUR_NODE_IP_HERE
+- setup.sh: removed hardcoded node IP default from prompt — reads from .env only
+- README: "static IP" wording corrected to "DHCP reservation" throughout
+- README: troubleshooting node IP replaced with YOUR_NODE_IP placeholder
 
 ## [0.1.8] - 2026-05-23
 

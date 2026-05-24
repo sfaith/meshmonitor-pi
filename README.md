@@ -81,15 +81,15 @@ The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker 
 - Raspberry Pi running **Raspberry Pi OS Lite 64-bit** (bookworm)
 - Network connectivity (Ethernet recommended for reliability)
 - Meshtastic node reachable on your LAN via TCP (port 4403)
-- Static IP assigned to the Pi via your router's DHCP reservation
+- DHCP reservation configured in your router so the Pi always gets the same IP
 
 ---
 
 ## First-Time Setup
 
-### 1. Assign a static IP to the Pi
+### 1. Reserve a static IP for the Pi
 
-In your router's admin interface, find the Pi's MAC address and assign it a permanent IP (DHCP reservation). Note that IP — you'll need it in the next step.
+In your router's DHCP settings, find the Pi's MAC address and assign it a permanent IP reservation. The Pi itself uses normal DHCP — the reservation just ensures it always gets the same address. Note that IP — you'll need it when running `setup.sh`.
 
 ### 2. Clone this repo onto the Pi
 
@@ -212,8 +212,8 @@ Check `ALLOWED_ORIGINS` in `.env` — it must exactly match the URL you're using
 
 **MeshMonitor can't connect to the node**
 ```bash
-ping 10.45.72.250
-nc -zv 10.45.72.250 4403
+ping YOUR_NODE_IP
+nc -zv YOUR_NODE_IP 4403
 ```
 
 **Reset MeshMonitor data**

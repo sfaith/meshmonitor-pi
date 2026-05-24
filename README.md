@@ -5,25 +5,91 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 ## Quick Start
 
-1. **Reserve a static IP** for your Pi in your router's DHCP settings
-2. **Clone this repo** onto the Pi:
+<details>
+<summary>Already know what you're doing? Click here for the short version.</summary>
+
+1. Flash **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+) via Raspberry Pi Imager with SSH and password authentication enabled
+2. Reserve a static DHCP IP for your Pi in your router
+3. SSH in and run:
    ```bash
-   git clone https://github.com/sfaith/meshmonitor-pi.git
-   cd meshmonitor-pi
-   chmod +x setup.sh
-   ```
-3. **Run the setup wizard** and follow the prompts:
-   ```bash
+   sudo apt update && sudo apt full-upgrade -y && \
+   sudo apt install -y git curl openssl bluez && \
+   git clone https://github.com/sfaith/meshmonitor-pi.git && \
+   cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
    ./setup.sh
    ```
-4. **Reboot** to apply SD card optimizations:
-   ```bash
-   sudo reboot
-   ```
-5. **Open the web UI** at `http://<PI_IP>:8080` and change the default password
-   (`admin` / `changeme`)
+4. Reboot, open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
-That's it. The wizard handles Docker installation, node configuration, watchdog, and auto-upgrade automatically. See the sections below for hardware recommendations, adding nodes, and troubleshooting.
+</details>
+
+---
+
+> **New to Raspberry Pi?** You'll need to be comfortable with:
+> - Accessing your router's admin page to find your Pi's IP address
+> - Using a terminal application to connect to your Pi via SSH
+>   (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/) — Mac/Linux: Terminal)
+>
+> If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
+
+### What you need
+- A Raspberry Pi — see the [Hardware](#hardware) section for board and SD card recommendations
+- A computer to write the SD card
+- Your Pi connected to your router via Ethernet or WiFi
+
+### 1. Write the SD card
+Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) on your computer. Open it and:
+
+1. Click **Choose Device** and select your Pi model
+2. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite**
+   - Pi 4 or 5: choose the **64-bit** version
+   - Pi 3B / 3B+: choose the **32-bit** version
+3. Click **Choose Storage** and select your SD card
+4. Click **Next** — when asked about OS customization settings, click **Edit Settings**:
+   - Set a hostname (e.g. `meshmonitor`)
+   - Set a username and password — you'll use these to log in via SSH
+   - Configure WiFi credentials if not using Ethernet
+   - On the **Services** tab, check **Enable SSH** and select **Use password authentication**
+   - Advanced users may prefer key-based authentication — the wizard supports either
+5. Click **Save** → **Yes** → **Yes** to write the card
+
+### 2. Boot the Pi and find its IP
+Insert the SD card, connect Ethernet if using it, and power on. After about a minute find the Pi's IP address in your router's connected devices list.
+
+While you're in your router, assign the Pi a **permanent DHCP reservation** — this makes sure your Pi always gets the same address on your network so you can always find it. Note the IP address down.
+
+### 3. SSH into the Pi
+Open a terminal on your computer and connect to the Pi:
+- **Windows:** open Windows Terminal or PuTTY and connect to your Pi's IP address
+- **Mac / Linux:** open Terminal
+
+```bash
+ssh yourusername@192.168.1.X
+```
+Replace `yourusername` with the username you set in the Imager, and `192.168.1.X` with your Pi's IP address.
+
+### 4. Run the bootstrap command
+Paste this full block into the terminal — it updates the OS, installs dependencies, clones the repo, and launches the setup wizard automatically:
+
+```bash
+sudo apt update && sudo apt full-upgrade -y && \
+sudo apt install -y git curl openssl bluez && \
+git clone https://github.com/sfaith/meshmonitor-pi.git && \
+cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
+./setup.sh
+```
+
+> The OS upgrade may take a few minutes. The wizard will launch automatically when it's done.
+
+### 5. Reboot
+```bash
+sudo reboot
+```
+This applies SD card optimizations configured during setup.
+
+### 6. Open the web UI
+Navigate to `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately** via the top-right menu.
+
+See the sections below for hardware recommendations, adding nodes, and troubleshooting.
 
 ---
 
@@ -200,17 +266,17 @@ To reclaim disk space from old image layers:
 docker image prune -f
 ```
 
-## Adding a BLE Node
+## Adding More Nodes
 
-Re-run `./setup.sh` and choose **"Add a BLE (Bluetooth) node"** from the Node Connections menu. The wizard will scan for nearby Meshtastic devices, let you select one, and configure the bridge automatically.
+Re-run `./setup.sh` and choose the appropriate option from the Node Connections menu. The wizard will walk you through configuration and restart the stack automatically.
+
+### BLE (Bluetooth) Node
 
 Make sure your Meshtastic device is:
 - Powered on and within ~10 meters of the Pi
 - Not actively connected to another phone or app
 
-## Adding a Serial Node
-
-Re-run `./setup.sh` and choose **"Add a serial/USB node"** from the Node Connections menu. The wizard will detect your device, walk you through the configuration, and restart the stack automatically.
+### Serial (USB) Node
 
 Before running setup, make sure serial mode is enabled on your Meshtastic device. From a computer connected to the device:
 

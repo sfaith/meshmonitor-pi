@@ -355,32 +355,36 @@ add_ble_node() {
   if [[ "$PAIR_CHOICE" == "1" ]]; then
     echo
     echo "  ── Bluetooth Pairing ────────────────────────────────"
-    echo "  Pairing must be done in a separate terminal session."
+    echo "  Make sure your device is:"
+    echo "    • Powered on and nearby (within ~10 meters)"
+    echo "    • Not connected to another phone or app"
     echo
-    echo "  Open a second SSH session to the Pi and run:"
-    echo
-    echo "    bluetoothctl"
-    echo "    scan on"
-    echo "    (wait for ${ble_name:-your device} to appear)"
-    echo "    pair ${ble_addr}"
-    echo "    trust ${ble_addr}"
-    echo "    exit"
-    echo
-    echo "  If your device has a PIN or passkey:"
-    echo "    • Watch your device screen — a 6-digit code may appear"
-    echo "    • Type it into the bluetoothctl prompt when asked"
+    echo "  If your device has a PIN or passkey, watch the screen"
+    echo "  — a 6-digit code may appear. Type it here when prompted."
     echo
     echo "  Power cycle your device first if pairing is rejected."
     echo
-    echo -en "  Press Enter here when pairing is complete (or Ctrl+C to abort): "
+    echo -en "  Ready to pair? (press Enter to continue or Ctrl+C to abort): "
     read -r _
     echo
-    if bluetoothctl info "$ble_addr" 2>/dev/null | grep -q "Paired: yes"; then
-      success "Pairing confirmed: ${ble_addr}"
+
+    # Register a Bluetooth agent so PIN prompts appear in this terminal
+    bluetoothctl agent on &>/dev/null
+    bluetoothctl default-agent &>/dev/null
+
+    local pair_ok=false
+    if bluetoothctl pair "$ble_addr" && \
+       bluetoothctl trust "$ble_addr"; then
+      pair_ok=true
+      success "Paired and trusted: ${ble_addr}"
     else
-      warn "Could not confirm pairing. The bridge may still connect"
-      warn "but PIN-protected devices will likely fail to send data."
-      warn "Re-run setup.sh and pair again if the connection fails."
+      warn "Pairing failed or was rejected."
+      warn "Try power cycling your device and re-running setup.sh."
+    fi
+
+    if [[ "$pair_ok" == "false" ]]; then
+      warn "The bridge may still connect but PIN-protected devices"
+      warn "will likely fail to send data without pairing."
     fi
   else
     warn "Skipping pairing. If the device has a PIN, the bridge"

@@ -7,7 +7,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 | Container | Purpose |
 |---|---|
-| `meshmonitor` | Web dashboard — connects to Meshtastic node via TCP |
+| `meshmonitor` | Web dashboard — connects to Meshtastic nodes via TCP, serial, or BLE |
 
 MQTT integration is available natively in MeshMonitor 4.0 via Dashboard → Sources → Add → MQTT. No sidecar needed.
 

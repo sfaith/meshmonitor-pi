@@ -894,20 +894,20 @@ for i in $(seq 1 "$NODE_COUNT"); do
       CONTAINER="meshmonitor-ble-${BLE_BRIDGE_COUNT}"
       NODE_SUMMARY_LINES+="  ✓  BLE    — ${CONTAINER} (${node_name})\n"
       BRIDGE_ACTION_LINES+="
-  ║  BLE — ${node_name}$(printf '%*s' $(( 38 - ${#node_name} )) '')║
-  ║    Host : ${CONTAINER}$(printf '%*s' $(( 38 - ${#CONTAINER} )) '')║
-  ║    Port : 4403                                       ║
-  ║                                                      ║"
+  ║  BLE — ${node_name}
+  ║    Host : ${CONTAINER}
+  ║    Port : 4403
+  ║"
       ;;
     serial)
       SERIAL_BRIDGE_COUNT=$(( SERIAL_BRIDGE_COUNT + 1 ))
       CONTAINER="meshmonitor-serial-${SERIAL_BRIDGE_COUNT}"
       NODE_SUMMARY_LINES+="  ✓  Serial — ${CONTAINER} (${node_name})\n"
       BRIDGE_ACTION_LINES+="
-  ║  Serial — ${node_name}$(printf '%*s' $(( 38 - ${#node_name} )) '')║
-  ║    Host : ${CONTAINER}$(printf '%*s' $(( 37 - ${#CONTAINER} )) '')║
-  ║    Port : 4403                                       ║
-  ║                                                      ║"
+  ║  Serial — ${node_name}
+  ║    Host : ${CONTAINER}
+  ║    Port : 4403
+  ║"
       ;;
   esac
 done

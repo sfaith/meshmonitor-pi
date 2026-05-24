@@ -186,13 +186,18 @@ docker ps
 
 ## Auto-Upgrade
 
-A cron job installed by `setup.sh` runs `./launch.sh pull && ./launch.sh up -d` daily at 3 AM (`America/Phoenix`). When a new image is available it pulls it and recreates the container, removing the old layer to reclaim SD space.
+The stack updates itself automatically every night at 3 AM — no action needed. When a new image is available it pulls it and restarts the containers.
 
-To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `setup.sh` to reinstall the cron job.
-
-To check the upgrade log:
+To check the last upgrade:
 ```bash
 cat ~/meshmonitor-upgrade.log
+```
+
+To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `./setup.sh` to reinstall the cron job.
+
+To reclaim disk space from old image layers:
+```bash
+docker image prune -f
 ```
 
 ## Adding a BLE Node
@@ -238,6 +243,25 @@ Check `ALLOWED_ORIGINS` in `.env` — it must exactly match the URL you're using
 ping YOUR_NODE_IP
 curl -v telnet://YOUR_NODE_IP:4403
 ```
+
+**UI stopped working after an overnight upgrade**
+
+Check the upgrade log first:
+```bash
+cat ~/meshmonitor-upgrade.log
+```
+Then check container status and logs:
+```bash
+docker ps
+docker logs meshmonitor
+```
+Check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for breaking changes — env var renames or removals are the most common cause.
+
+If the image itself is broken, disable auto-upgrade while you wait for an upstream fix:
+```bash
+crontab -e
+```
+Comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to restore it when ready. Note: MeshMonitor does not publish versioned image tags, so rolling back is not possible — waiting for an upstream fix is the fastest path.
 
 **Reset MeshMonitor data**
 ```bash

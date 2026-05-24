@@ -1,37 +1,41 @@
 # =============================================================================
-# MeshMonitor - Raspberry Pi 4 Docker Compose (SD Card Optimized)
+# MeshMonitor Pi — Docker Compose Stack (SD Card Optimized)
 # =============================================================================
 #
-# Designed for 64-bit Raspberry Pi 4 (arm64) running off micro-SD.
-# Minimizes disk writes to extend SD card lifespan.
+# This file defines the core MeshMonitor service only.
+# BLE and serial bridge services are defined in docker-compose.generated.yml,
+# which is generated automatically by launch.sh from your .env configuration.
+# Do not edit docker-compose.generated.yml — it is overwritten on every launch.
 #
-# SD Card Protection (5 layers):
-#   1. Docker logging  - local driver, capped at ~100KB per service
-#   2. Access logs     - disabled via ACCESS_LOG_ENABLED=false
-#   3. Audit/app logs  - tmpfs on /data/logs (RAM-only, lost on restart)
-#   4. Temp files      - tmpfs on /tmp in all containers
-#   5. Debug output    - suppressed via NODE_ENV=production
+# SD Card Write Protection (5 layers):
+#   1. Docker local log driver — capped at 100KB x 2 files per container
+#   2. daemon.json             — system-wide Docker log cap (installed by setup.sh)
+#   3. ACCESS_LOG_ENABLED=false — no HTTP access logs written
+#   4. tmpfs /data/logs        — audit log goes to RAM, never hits SD
+#   5. OS hardening            — noatime, volatile journal, tmpfs /var/log
 #
-# Only remaining disk writes:
-#   - SQLite DB (/data/meshmonitor.db) — necessary for persistence
-#   - Docker image layers             — pulled during upgrades only
-#
-# Auto-upgrade: handled by a daily cron job installed by setup.sh
-#   Manual upgrade: docker compose pull && docker compose up -d
+# Only necessary SD writes:
+#   - SQLite database (/data/meshmonitor.db) — required for persistence
+#   - Docker image layers                    — pulled during upgrades only
 #
 # Usage:
-#   cp env.example .env && nano .env    # configure first
-#   ./setup.sh                          # first-time setup
-#   docker compose up -d                # start stack manually if needed
-#
-# Future serial node:
-#   Uncomment the serial-bridge service below and set SERIAL_DEVICE in .env
+#   ./setup.sh                     # first-time setup and configuration wizard
+#   ./setup.sh                     # re-run to add nodes or change settings
+#   ./scan-ble.sh                  # discover nearby Bluetooth nodes
 # =============================================================================
 
 services:
 
   # ---------------------------------------------------------------------------
-  # MeshMonitor — main web dashboard
+  # MeshMonitor — web dashboard
+  #
+  # MESHTASTIC_NODE_IP bootstraps the first source on initial install only.
+  # After first boot, add and manage sources via Dashboard → Sources.
+  # Changing this env var after first boot has no effect on existing sources.
+  #
+  # For BLE or serial nodes: leave MESHTASTIC_NODE_IP unset — MeshMonitor
+  # starts cleanly with no bootstrap source. Add bridge containers as sources
+  # via Dashboard → Sources → Add Source → TCP after first boot.
   # ---------------------------------------------------------------------------
   meshmonitor:
     image: ghcr.io/yeraze/meshmonitor:latest
@@ -44,15 +48,16 @@ services:
     volumes:
       - meshmonitor-data:/data
     tmpfs:
-      - /data/logs:size=10M    # audit.log goes to RAM, never hits SD
+      - /data/logs:size=10M
       - /tmp:size=50M
     environment:
       - NODE_ENV=production
       - TZ=${TZ:-America/Phoenix}
 
-      # Meshtastic source — TCP node on LAN
-      - MESHTASTIC_NODE_IP=${MESHTASTIC_NODE_IP}
-      - MESHTASTIC_NODE_PORT=${MESHTASTIC_NODE_PORT:-4403}
+      # TCP node bootstrap — seeds first source on first boot only.
+      # Omit or leave blank for BLE/serial-only deployments.
+      - MESHTASTIC_NODE_IP=${NODE_1_IP:-}
+      - MESHTASTIC_NODE_PORT=${NODE_1_PORT:-4403}
 
       # Access control
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
@@ -73,37 +78,6 @@ services:
       options:
         max-size: "100k"
         max-file: "2"
-
-  # ---------------------------------------------------------------------------
-  # Serial Bridge — FUTURE USE (commented out)
-  # Uncomment this service when attaching a USB/serial Meshtastic node.
-  # Also update MESHTASTIC_NODE_IP in .env to: serial-bridge
-  #
-  # Steps to enable:
-  #   1. Set SERIAL_DEVICE in .env (default: /dev/ttyACM0)
-  #   2. Uncomment the serial-bridge service below
-  #   3. Change MESHTASTIC_NODE_IP in .env to: serial-bridge
-  #   4. Run: docker compose up -d
-  # ---------------------------------------------------------------------------
-  # serial-bridge:
-  #   image: ghcr.io/yeraze/meshtastic-serial-bridge:latest
-  #   container_name: meshmonitor-serial-bridge
-  #   restart: unless-stopped
-  #   networks:
-  #     - meshtastic_net
-  #   devices:
-  #     - ${SERIAL_DEVICE:-/dev/ttyACM0}:/dev/ttyACM0
-  #   environment:
-  #     - SERIAL_DEVICE=/dev/ttyACM0
-  #     - BAUD_RATE=115200
-  #     - TCP_PORT=4403
-  #   tmpfs:
-  #     - /tmp:size=10M
-  #   logging:
-  #     driver: local
-  #     options:
-  #       max-size: "100k"
-  #       max-file: "2"
 
 # -----------------------------------------------------------------------------
 # Volumes

@@ -1,6 +1,9 @@
 # Secrets — never commit
 .env
 
+# Generated at runtime by launch.sh — not a source file
+docker-compose.generated.yml
+
 # Local Claude context files
 CLAUDE.md
 NewChatPrompt.md

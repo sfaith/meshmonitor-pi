@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: Switched watchdog detection from `sudo dmesg` to
+  `journalctl -b` — more reliable in script context (no sudo required, no
+  rate limiting). Previous dmesg-based detection was silently failing, causing
+  the script to fall through to the userspace daemon install path on every run.
+
 ## [0.2.0] - 2026-05-23
 
 ### Fixed

@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.2.0"
+echo "  MeshMonitor Pi — First-Boot Setup v0.2.1"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -273,8 +273,10 @@ info "Step 5/7 — Hardware Watchdog"
 
 WATCHDOG_HANDLED=false
 
-# Check if systemd already owns the watchdog (Bookworm default behaviour)
-if sudo dmesg 2>/dev/null | grep -q "Using hardware watchdog"; then
+# Check if systemd already owns the watchdog (Bookworm default behaviour).
+# journalctl -b is more reliable than dmesg in script context — no sudo needed,
+# no rate limiting, reads from the persistent/volatile journal directly.
+if journalctl -b 2>/dev/null | grep -q "Using hardware watchdog"; then
   success "Hardware watchdog active — managed by systemd (Broadcom BCM2835)."
   WATCHDOG_HANDLED=true
 

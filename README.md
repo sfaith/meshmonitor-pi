@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.3.0-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
+![Version](https://img.shields.io/badge/version-0.3.3-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
@@ -80,7 +80,7 @@ The only necessary SD writes are the SQLite database (`meshmonitor-data` Docker 
 
 - Raspberry Pi running **Raspberry Pi OS Lite 64-bit** (bookworm)
 - Network connectivity (Ethernet recommended for reliability)
-- Meshtastic node reachable on your LAN via TCP (port 4403)
+- At least one Meshtastic node — connected via WiFi/Ethernet (TCP), Bluetooth (BLE), or USB cable (serial). TCP is the simplest option if your node is on the same network as the Pi.
 - DHCP reservation configured in your router so the Pi always gets the same IP
 
 ---
@@ -98,15 +98,7 @@ git clone https://github.com/sfaith/meshmonitor-pi.git
 cd meshmonitor-pi
 ```
 
-### 3. Generate a session secret
-
-```bash
-openssl rand -hex 32
-```
-
-Copy the output — you'll paste it into `setup.sh` when prompted.
-
-### 4. Run setup
+### 3. Run setup
 
 ```bash
 chmod +x setup.sh
@@ -115,7 +107,15 @@ chmod +x setup.sh
 
 The script will walk you through confirming all settings, harden the OS, configure Docker, and start the stack.
 
-### 5. Reboot
+`setup.sh` generates a session secret automatically on first run — no manual step needed. If you prefer to supply your own, generate one and add it to `.env` before running setup:
+
+```bash
+openssl rand -hex 32
+```
+
+Set `SESSION_SECRET=<output>` in `.env` — setup.sh will detect and keep it.
+
+### 4. Reboot
 
 ```bash
 sudo reboot
@@ -123,7 +123,7 @@ sudo reboot
 
 This applies the `/etc/fstab` changes (`noatime`, tmpfs `/var/log`).
 
-### 6. Verify the stack came back up
+### 5. Verify the stack came back up
 
 ```bash
 cd meshmonitor-pi
@@ -134,11 +134,13 @@ The container should show `running (healthy)`.
 
 `setup.sh` is safe to re-run at any time — all steps check before acting and skip anything already configured.
 
-### 7. Change the default password
+### 6. Change the default password
 
 Open `http://<PI_IP>:8080` in a browser, log in with `admin` / `changeme`, and immediately change the password via the top-right menu.
 
 ## Day-to-Day Operations
+
+> **Note:** For most changes — adding nodes, updating settings — just re-run `./setup.sh`. The commands below are for day-to-day monitoring and maintenance.
 
 ```bash
 # Live logs
@@ -151,7 +153,7 @@ docker compose ps
 docker compose down
 
 # Manual upgrade (cron handles this automatically at 3 AM)
-docker compose pull && docker compose up -d
+./launch.sh pull && ./launch.sh up -d
 
 # Restart a single service
 docker compose restart meshmonitor
@@ -163,34 +165,21 @@ A cron job installed by `setup.sh` runs `docker compose pull && docker compose u
 
 To change the schedule, edit `UPGRADE_TIME` in `.env` (24-hour `HH:MM` format) and re-run `setup.sh` to reinstall the cron job.
 
-To check the last upgrade log (RAM only, lost on reboot):
+To check the upgrade log:
 ```bash
-cat /tmp/meshmonitor-upgrade.log
+cat ~/meshmonitor-upgrade.log
 ```
 
 ## Adding a Serial Node
 
-When you're ready to attach a USB/serial Meshtastic node to the Pi:
+Re-run `./setup.sh` and choose **"Add a serial/USB node"** from the Node Connections menu. The wizard will detect your device, walk you through the configuration, and restart the stack automatically.
 
-1. Plug in the device and find its path:
-   ```bash
-   ls /dev/tty*   # usually /dev/ttyACM0 or /dev/ttyUSB0
-   ```
+Before running setup, make sure serial mode is enabled on your Meshtastic device. From a computer connected to the device:
 
-2. Edit `.env` and set:
-   ```
-   SERIAL_DEVICE=/dev/ttyACM0
-   MESHTASTIC_NODE_IP=serial-bridge
-   ```
-
-3. Edit `docker-compose.yml` and uncomment the `serial-bridge` service block.
-
-4. Restart the stack:
-   ```bash
-   docker compose up -d
-   ```
-
-You can run both a TCP source and the serial bridge simultaneously — add the serial node as a second source from **Dashboard → Sources** in the MeshMonitor UI.
+```bash
+meshtastic --set serial.enabled true
+meshtastic --set serial.mode SIMPLE
+```
 
 ## MQTT Integration
 
@@ -204,6 +193,7 @@ Broker   : mqtt.azmsh.net
 Topic    : msh/US/AZ/Tucson/#
 Username : azmshpub
 ```
+*These are credentials for the Arizona regional mesh. Check your regional mesh community for the correct broker and topic.*
 
 ## Troubleshooting
 

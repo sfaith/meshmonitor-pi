@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.1
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.3
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -92,7 +92,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.1"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.3"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -428,15 +428,18 @@ test_all_nodes() {
         else echo " [WARN] not reachable"; all_ok=false; fi
         ;;
       ble)
-        local addr_var="NODE_${i}_BLE_ADDRESS"
-        local addr="${!addr_var:-}"
-        printf "  Node %d (%s)\n    BLE %s..." "$i" "$node_name" "$addr"
-        SCAN_CHECK=$(docker run --rm --privileged \
-          -v /var/run/dbus:/var/run/dbus \
-          -v /var/lib/bluetooth:/var/lib/bluetooth:ro \
-          ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan 2>/dev/null || true)
-        if echo "$SCAN_CHECK" | grep -qi "$addr"; then echo " [OK] visible"
-        else echo " [WARN] not visible — may be out of range"; all_ok=false; fi
+        local ble_idx=0
+        for j in $(seq 1 "$i"); do
+          t_j="NODE_${j}_TYPE"
+          [[ "${!t_j:-}" == "ble" ]] && ble_idx=$(( ble_idx + 1 ))
+        done
+        local container="meshmonitor-ble-${ble_idx}"
+        printf "  Node %d (%s)\n    BLE bridge %s..." "$i" "$node_name" "$container"
+        if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
+          echo " [OK] container running"
+        else
+          echo " [not started yet — will verify after stack launch]"
+        fi
         ;;
       serial)
         local dev_var="NODE_${i}_SERIAL_DEVICE"
@@ -533,6 +536,12 @@ while [[ "$ADD_MORE" == "true" ]]; do
     echo -en "\n  Choice [${last}]: "
     read -r MORE_CHOICE
     [[ -z "$MORE_CHOICE" ]] && MORE_CHOICE="$last"
+    if ! [[ "$MORE_CHOICE" =~ ^[0-9]+$ ]] || \
+       [[ "$MORE_CHOICE" -lt 1 ]] || \
+       [[ "$MORE_CHOICE" -gt "$last" ]]; then
+      warn "Invalid choice — please enter a number between 1 and ${last}."
+      continue
+    fi
     if [[ "$MORE_CHOICE" -lt "$last" ]]; then
       ridx=$(( MORE_CHOICE - 1 ))
       eval "NODE_${NEXT_NODE}_TYPE=ble"
@@ -837,19 +846,19 @@ if [[ "$START_CHOICE" == "1" ]]; then
         printf "  Node %d (%s — BLE bridge %d): " "$i" "$node_name" "$BLE_IDX"
         attempts=0; ready=false
         while [[ $attempts -lt 6 ]]; do
-          if docker exec "$CONTAINER" nc -z localhost 4403 &>/dev/null 2>&1; then
+          if docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q "true"; then
             ready=true; break
           fi
           sleep 5; attempts=$(( attempts + 1 ))
         done
-        if [[ "$ready" == "true" ]]; then echo "[OK] bridge listening"
+        if [[ "$ready" == "true" ]]; then echo "[OK] container running"
         else echo "[starting] check: docker logs ${CONTAINER}"; fi
         ;;
       serial)
         SERIAL_IDX=$(( SERIAL_IDX + 1 ))
         CONTAINER="meshmonitor-serial-${SERIAL_IDX}"
         printf "  Node %d (%s — serial bridge %d): " "$i" "$node_name" "$SERIAL_IDX"
-        if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+        if docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q "true"; then
           echo "[OK] container running"
         else echo "[WARN] container not found — check: docker compose logs"; fi
         ;;
@@ -866,35 +875,50 @@ fi
 # Post-setup communication
 # -----------------------------------------------------------------------------
 NEXT_STEPS=""
-BLE_BRIDGE_STEPS="" SERIAL_BRIDGE_STEPS=""
 BLE_BRIDGE_COUNT=0; SERIAL_BRIDGE_COUNT=0
+
+# ── Build node summary and bridge action lines ────────────────────────────────
+NODE_SUMMARY_LINES=""
+BRIDGE_ACTION_LINES=""
 
 for i in $(seq 1 "$NODE_COUNT"); do
   t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
   node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
   case "$node_type" in
+    tcp)
+      ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+      NODE_SUMMARY_LINES+="  ✓  TCP    — ${!ip_var:-?}:${!port_var:-4403} (${node_name})\n"
+      ;;
     ble)
       BLE_BRIDGE_COUNT=$(( BLE_BRIDGE_COUNT + 1 ))
-      BLE_BRIDGE_STEPS+="
-    Node ${i} (${node_name}):
-      Host : meshmonitor-ble-${BLE_BRIDGE_COUNT}
-      Port : 4403
-      Name : ${node_name}  (or anything you like)
-"
+      CONTAINER="meshmonitor-ble-${BLE_BRIDGE_COUNT}"
+      NODE_SUMMARY_LINES+="  ✓  BLE    — ${CONTAINER} (${node_name})\n"
+      BRIDGE_ACTION_LINES+="
+  ║  BLE — ${node_name}$(printf '%*s' $(( 38 - ${#node_name} )) '')║
+  ║    Host : ${CONTAINER}$(printf '%*s' $(( 38 - ${#CONTAINER} )) '')║
+  ║    Port : 4403                                       ║
+  ║                                                      ║"
       ;;
     serial)
       SERIAL_BRIDGE_COUNT=$(( SERIAL_BRIDGE_COUNT + 1 ))
-      SERIAL_BRIDGE_STEPS+="
-    Node ${i} (${node_name}):
-      Host : meshmonitor-serial-${SERIAL_BRIDGE_COUNT}
-      Port : 4403
-      Name : ${node_name}  (or anything you like)
-"
+      CONTAINER="meshmonitor-serial-${SERIAL_BRIDGE_COUNT}"
+      NODE_SUMMARY_LINES+="  ✓  Serial — ${CONTAINER} (${node_name})\n"
+      BRIDGE_ACTION_LINES+="
+  ║  Serial — ${node_name}$(printf '%*s' $(( 38 - ${#node_name} )) '')║
+  ║    Host : ${CONTAINER}$(printf '%*s' $(( 37 - ${#CONTAINER} )) '')║
+  ║    Port : 4403                                       ║
+  ║                                                      ║"
       ;;
   esac
 done
 
-# Password box — first run only
+# ── Node summary block ────────────────────────────────────────────────────────
+NEXT_STEPS+="
+  ── Configured nodes ──────────────────────────────────
+$(printf "%b" "$NODE_SUMMARY_LINES")  ─────────────────────────────────────────────────────
+"
+
+# ── Password box — first run only ────────────────────────────────────────────
 if is_first_run; then
   NEXT_STEPS+="
   ╔══════════════════════════════════════════════════════╗
@@ -913,39 +937,28 @@ if is_first_run; then
 "
 fi
 
-# Bridge source instructions
+# ── Bridge action box ─────────────────────────────────────────────────────────
 if [[ $BLE_BRIDGE_COUNT -gt 0 ]] || [[ $SERIAL_BRIDGE_COUNT -gt 0 ]]; then
   NEXT_STEPS+="
-  ── REQUIRED — Add your bridge nodes to MeshMonitor ───
-
-  Your bridge containers are running but MeshMonitor does
-  not know about them yet. Add each one as a source.
-
-  NOTE: Even though these are Bluetooth/serial nodes, you
-        add them as TCP sources — the bridge translates the
-        connection behind the scenes.
-
-    Dashboard → Sources → Add Source → TCP
-"
-  [[ -n "$BLE_BRIDGE_STEPS" ]]    && NEXT_STEPS+="$BLE_BRIDGE_STEPS"
-  [[ -n "$SERIAL_BRIDGE_STEPS" ]] && NEXT_STEPS+="$SERIAL_BRIDGE_STEPS"
-  NEXT_STEPS+="
-  Full setup guide:
-    https://meshmonitor.org/configuration/ble-bridge.html
+  ╔══════════════════════════════════════════════════════╗
+  ║  ⚠️  ACTION REQUIRED — ADD YOUR BRIDGE NODES         ║
+  ║                                                      ║
+  ║  Your bridge containers are running but              ║
+  ║  MeshMonitor doesn't know about them yet.            ║
+  ║                                                      ║
+  ║  For each node below, go to:                         ║
+  ║  Dashboard → Sources → Add Source → TCP              ║
+  ║                                                      ║
+  ║  NOTE: Even though these are Bluetooth/serial        ║
+  ║  nodes, you add them as TCP sources — the bridge     ║
+  ║  translates the connection behind the scenes.        ║
+  ║                                                      ║${BRIDGE_ACTION_LINES}
+  ╚══════════════════════════════════════════════════════╝
 "
 fi
 
+# ── Troubleshooting ───────────────────────────────────────────────────────────
 NEXT_STEPS+="
-  ── OPTIONAL ──────────────────────────────────────────
-
-  Enable Virtual Node (lets Meshtastic mobile apps connect
-  through MeshMonitor):
-    Dashboard → Sources → (select source)
-    → Virtual Node → Enable → Port 4404
-
-  Set permissions for non-admin users:
-    Dashboard → Users → Permissions → select source
-
   ── TROUBLESHOOTING ───────────────────────────────────
 
   BLE bridge not connecting?

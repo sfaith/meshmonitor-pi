@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-05-23
+
+### Added
+- setup.sh: End-of-wizard node summary block — lists all configured nodes with
+  a checkmark so users can confirm their setup at a glance
+- setup.sh: Bridge action-required box — prominent ╔══╗ box at end of wizard
+  listing each BLE/serial bridge container name, host, and port to add as a
+  TCP source in MeshMonitor Dashboard → Sources. Shown only when bridge nodes
+  are configured. Saved to ~/meshmonitor-next-steps.txt for later reference
+- setup.sh: OPTIONAL section (Virtual Node, permissions) removed from terminal
+  output — retained in ~/meshmonitor-next-steps.txt only
+
+### Fixed
+- setup.sh: BLE connectivity check in `test_all_nodes` replaced slow blocking
+  docker scan (10-15s per node) with instant `docker ps` container check —
+  avoids redundant re-scan after a node was just added, gives accurate status
+- setup.sh: Post-start BLE bridge readiness check replaced `nc` inside container
+  (not available in minimal bridge image) with `docker inspect` — reliable
+  regardless of what is installed in the bridge image
+- setup.sh: Post-start serial bridge check aligned to `docker inspect` for
+  consistency with BLE check
+- setup.sh: "Add more nodes" BLE scan results loop now validates user input —
+  rejects non-numeric and out-of-range entries to prevent blank MAC address
+  being written to .env silently
+
+### Changed
+- README: Serial node section rewritten — replace stale manual .env/compose
+  instructions with "re-run setup.sh" workflow
+- README: Session secret step rewritten — auto-generation is the default,
+  manual openssl method documented for technically inclined users
+- README: Setup steps renumbered (6 steps, down from 7)
+- README: Prerequisites broadened to cover TCP, BLE, and serial node options
+- README: Day-to-Day Operations note added directing users to setup.sh for
+  config changes; manual upgrade command updated to use launch.sh
+- README: Upgrade log path corrected to ~/meshmonitor-upgrade.log
+- README: MQTT section notes that credentials shown are Arizona regional mesh only
+- README: Version badge updated to 0.3.3
+
 ## [0.3.2] - 2026-05-24
 
 ### Fixed

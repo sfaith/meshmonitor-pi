@@ -875,10 +875,6 @@ fi
 # Post-setup communication
 # -----------------------------------------------------------------------------
 
-# Helper — print a box line with left border only
-box_line()  { printf "  ║  %s\n" "$*"; }
-box_blank() { printf "  ║\n"; }
-
 # ── Node summary ──────────────────────────────────────────────────────────────
 print_node_summary() {
   local ble_c=0 ser_c=0
@@ -934,17 +930,17 @@ print_bridge_box() {
     case "$node_type" in
       ble)
         ble_c=$(( ble_c + 1 ))
-        box_line "BLE — ${node_name}"
-        box_line "  Host : meshmonitor-ble-${ble_c}"
-        box_line "  Port : 4403"
-        box_blank
+        echo "  ║  BLE — ${node_name}"
+        echo "  ║    Host : meshmonitor-ble-${ble_c}"
+        echo "  ║    Port : 4403"
+        echo "  ║"
         ;;
       serial)
         ser_c=$(( ser_c + 1 ))
-        box_line "Serial — ${node_name}"
-        box_line "  Host : meshmonitor-serial-${ser_c}"
-        box_line "  Port : 4403"
-        box_blank
+        echo "  ║  Serial — ${node_name}"
+        echo "  ║    Host : meshmonitor-serial-${ser_c}"
+        echo "  ║    Port : 4403"
+        echo "  ║"
         ;;
     esac
   done

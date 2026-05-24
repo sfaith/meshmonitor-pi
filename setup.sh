@@ -57,7 +57,7 @@ confirm() {
 # -----------------------------------------------------------------------------
 clear
 echo "============================================================"
-echo "  MeshMonitor Pi — First-Boot Setup v0.2.4"
+echo "  MeshMonitor Pi — First-Boot Setup v0.2.5"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -293,7 +293,8 @@ if [[ "$WATCHDOG_OWNER" == "1" ]]; then
   # /dev/watchdog exclusively so the daemon can't open it anyway (errno 16)
   # and leaves misleading "cannot open /dev/watchdog" errors in the journal.
   WATCHDOG_ENABLED=false
-  systemctl is-enabled watchdog 2>/dev/null | grep -q "enabled" && WATCHDOG_ENABLED=true || true
+  WATCHDOG_STATUS=$(systemctl is-enabled watchdog 2>/dev/null || true)
+  [[ "$WATCHDOG_STATUS" == "enabled" ]] && WATCHDOG_ENABLED=true || true
   if [[ "$WATCHDOG_ENABLED" == "true" ]]; then
     warn "Disabling redundant userspace watchdog daemon (systemd handles this natively on Bookworm)."
     sudo systemctl stop watchdog 2>/dev/null || true

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-05-23
+
+### Fixed
+- setup.sh step 5: WATCHDOG_ENABLED check used a pipe under set -euo pipefail —
+  `systemctl is-enabled | grep -q` could exit fatally if systemctl returned
+  non-zero. Fixed by capturing to a variable first.
+- CLAUDE.md: Project Summary updated to reflect multi-board support (Pi 3/4/5)
+
 ## [0.2.4] - 2026-05-23
 
 ### Fixed

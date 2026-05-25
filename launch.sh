@@ -203,9 +203,16 @@ fi
 # -----------------------------------------------------------------------------
 # Build and run compose command
 # -----------------------------------------------------------------------------
-COMPOSE_CMD="docker compose -f ${SCRIPT_DIR}/docker-compose.yml"
+COMPOSE_ARGS=(docker compose -f "${SCRIPT_DIR}/docker-compose.yml")
 if [[ "$HAS_BRIDGES" == "true" ]]; then
-  COMPOSE_CMD+=" -f ${GENERATED_COMPOSE}"
+  COMPOSE_ARGS+=(-f "${GENERATED_COMPOSE}")
+fi
+
+# Require a subcommand — running with no args passes nothing to docker compose
+# which prints its own help, but we give a clearer message first.
+if [[ $# -eq 0 ]]; then
+  echo "[ERROR] No subcommand given. Usage: launch.sh <up -d | down | pull | status>" >&2
+  exit 1
 fi
 
 # Print summary once, then exec compose
@@ -214,4 +221,4 @@ echo "  ────────────────────────
 printf "%b" "$BRIDGE_SUMMARY"
 echo "  ─────────────────────────────────────────────────────"
 
-exec $COMPOSE_CMD --progress=tty "$@"
+exec "${COMPOSE_ARGS[@]}" --progress=tty "$@"

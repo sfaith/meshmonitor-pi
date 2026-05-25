@@ -96,7 +96,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.3"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.4"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -236,6 +236,11 @@ add_tcp_node() {
   local port_var="NODE_${idx}_PORT"
   prompt "NODE_${idx}_PORT" "Node port          " "${!port_var:-4403}"
   local pv="${!port_var:-4403}"
+  if ! [[ "$pv" =~ ^[0-9]+$ ]] || [[ "$pv" -lt 1 ]] || [[ "$pv" -gt 65535 ]]; then
+    warn "Invalid port '${pv}' — defaulting to 4403."
+    eval "NODE_${idx}_PORT=4403"
+    pv="4403"
+  fi
   if bash -c "echo >/dev/tcp/${ip_val}/${pv}" 2>/dev/null; then success "Port ${pv} reachable OK"
   else warn "Port ${pv} not reachable — node may not be ready yet."; fi
   eval "NODE_${idx}_TYPE=tcp"
@@ -351,9 +356,14 @@ add_ble_node() {
     prompt "NODE_${idx}_BLE_ADDRESS" "BLE MAC address    " "" "AA:BB:CC:DD:EE:FF"
     local av="NODE_${idx}_BLE_ADDRESS"
     ble_addr="${!av:-}"
-    [[ -z "$ble_addr" ]] && error "BLE MAC address is required."
+    if [[ -z "$ble_addr" ]]; then
+      warn "BLE MAC address is required. Re-run setup.sh to add this node."
+      return 1
+    fi
     if ! [[ "$ble_addr" =~ ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$ ]]; then
-      error "Invalid MAC address format. Expected XX:XX:XX:XX:XX:XX (e.g. C7:03:DC:E9:D0:66)"
+      warn "Invalid MAC address format. Expected XX:XX:XX:XX:XX:XX (e.g. C7:03:DC:E9:D0:66)"
+      warn "Re-run setup.sh to add this node."
+      return 1
     fi
     local name_var="NODE_${idx}_NAME"
     prompt "$name_var" "Node name          " "BLE Node"
@@ -509,6 +519,11 @@ edit_node() {
       prompt "NODE_${eidx}_PORT" "Node port          " "${!port_var:-4403}"
       local new_port_var="NODE_${eidx}_PORT"
       local new_port="${!new_port_var:-4403}"
+      if ! [[ "$new_port" =~ ^[0-9]+$ ]] || [[ "$new_port" -lt 1 ]] || [[ "$new_port" -gt 65535 ]]; then
+        warn "Invalid port '${new_port}' — defaulting to 4403."
+        eval "NODE_${eidx}_PORT=4403"
+        new_port="4403"
+      fi
       echo
       echo "  Testing connectivity..."
       if ping -c1 -W2 "$new_ip" &>/dev/null 2>&1; then success "Ping ${new_ip} OK"
@@ -524,14 +539,38 @@ edit_node() {
       local new_addr_var="NODE_${eidx}_BLE_ADDRESS"
       local new_addr="${!new_addr_var:-}"
       if [[ -n "$new_addr" ]] && ! [[ "$new_addr" =~ ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$ ]]; then
-        error "Invalid MAC address format. Expected XX:XX:XX:XX:XX:XX"
+        warn "Invalid MAC address format. Expected XX:XX:XX:XX:XX:XX"
+        warn "BLE node ${eidx} not updated — re-run setup.sh to edit."
+        return
       fi
-      # If MAC changed, unpair old address
+      # If MAC changed, unpair old and offer pairing for new address
       if [[ "$new_addr" != "$old_addr" ]] && [[ -n "$old_addr" ]]; then
         echo
         echo "  MAC address changed — removing old pairing for ${old_addr}..."
         bluetoothctl remove "$old_addr" 2>/dev/null || true
-        success "Old pairing removed. Re-run pairing for new address via setup.sh."
+        success "Old pairing removed."
+        echo
+        echo "  ── Bluetooth Pairing ────────────────────────────────"
+        echo "  Pair the new address now for a stable connection?"
+        menu EDIT_PAIR_CHOICE 1 \
+          "Pair now  (recommended for PIN/passkey devices)" \
+          "Skip — I will pair later via setup.sh"
+        if [[ "$EDIT_PAIR_CHOICE" == "1" ]]; then
+          echo
+          echo "  You will now be dropped into a bluetoothctl session."
+          echo "  Run: scan on → pair ${new_addr} → trust ${new_addr} → exit"
+          echo
+          echo -en "  Press Enter to launch bluetoothctl: "
+          read -r _
+          bluetoothctl
+          if bluetoothctl info "$new_addr" 2>/dev/null | grep -q "Paired: yes"; then
+            success "Pairing confirmed: ${new_addr}"
+          else
+            warn "Pairing not detected — re-run setup.sh to pair if connection fails."
+          fi
+        else
+          warn "Skipping pairing — re-run setup.sh to pair the new address."
+        fi
       fi
       success "BLE node ${eidx} updated."
       ;;
@@ -665,58 +704,63 @@ remove_node() {
 }
 
 test_all_nodes() {
-  echo
-  echo "  ── Testing Node Connectivity ────────────────────────"
-  local all_ok=true
-  for i in $(seq 1 "$NODE_COUNT"); do
-    local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
-    local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
-    case "$node_type" in
-      tcp)
-        local ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
-        local ip="${!ip_var:-}" port="${!port_var:-4403}"
-        printf "  Node %d (%s)\n    Ping %s..." "$i" "$node_name" "$ip"
-        if ping -c1 -W2 "$ip" &>/dev/null 2>&1; then echo " [OK]"
-        else echo " [WARN] unreachable"; all_ok=false; fi
-        printf "    Port %s..." "$port"
-        if bash -c "echo >/dev/tcp/${ip}/${port}" 2>/dev/null; then echo " [OK]"
-        else echo " [WARN] not reachable"; all_ok=false; fi
-        ;;
-      ble)
-        local ble_idx=0
-        for j in $(seq 1 "$i"); do
-          t_j="NODE_${j}_TYPE"
-          [[ "${!t_j:-}" == "ble" ]] && ble_idx=$(( ble_idx + 1 ))
-        done
-        local container="meshmonitor-ble-${ble_idx}"
-        printf "  Node %d (%s)\n    BLE bridge %s..." "$i" "$node_name" "$container"
-        if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
-          echo " [OK] container running"
-        else
-          echo " [not started yet — will verify after stack launch]"
-        fi
-        ;;
-      serial)
-        local dev_var="NODE_${i}_SERIAL_DEVICE"
-        local dev="${!dev_var:-}"
-        printf "  Node %d (%s)\n    Device %s..." "$i" "$node_name" "$dev"
-        if [[ -e "$dev" ]]; then echo " [OK]"
-        else echo " [WARN] not found"; all_ok=false; fi
-        ;;
-    esac
-  done
-  echo "  ─────────────────────────────────────────────────────"
-  if [[ "$all_ok" == "true" ]]; then
-    success "All nodes reachable."
-  else
-    warn "One or more nodes have connectivity issues."
+  local all_ok
+  while true; do
     echo
-    menu TEST_ACTION 2 "Re-test all nodes" "Continue anyway" "Abort and fix issues first"
-    case "$TEST_ACTION" in
-      1) test_all_nodes ;;
-      3) error "Aborting. Fix connectivity issues and re-run setup.sh." ;;
-    esac
-  fi
+    echo "  ── Testing Node Connectivity ────────────────────────"
+    all_ok=true
+    for i in $(seq 1 "$NODE_COUNT"); do
+      local t_var="NODE_${i}_TYPE" n_var="NODE_${i}_NAME"
+      local node_type="${!t_var:-}" node_name="${!n_var:-Node ${i}}"
+      case "$node_type" in
+        tcp)
+          local ip_var="NODE_${i}_IP" port_var="NODE_${i}_PORT"
+          local ip="${!ip_var:-}" port="${!port_var:-4403}"
+          printf "  Node %d (%s)\n    Ping %s..." "$i" "$node_name" "$ip"
+          if ping -c1 -W2 "$ip" &>/dev/null 2>&1; then echo " [OK]"
+          else echo " [WARN] unreachable"; all_ok=false; fi
+          printf "    Port %s..." "$port"
+          if bash -c "echo >/dev/tcp/${ip}/${port}" 2>/dev/null; then echo " [OK]"
+          else echo " [WARN] not reachable"; all_ok=false; fi
+          ;;
+        ble)
+          local ble_idx=0
+          for j in $(seq 1 "$i"); do
+            t_j="NODE_${j}_TYPE"
+            [[ "${!t_j:-}" == "ble" ]] && ble_idx=$(( ble_idx + 1 ))
+          done
+          local container="meshmonitor-ble-${ble_idx}"
+          printf "  Node %d (%s)\n    BLE bridge %s..." "$i" "$node_name" "$container"
+          if docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
+            echo " [OK] container running"
+          else
+            echo " [not started yet — will verify after stack launch]"
+          fi
+          ;;
+        serial)
+          local dev_var="NODE_${i}_SERIAL_DEVICE"
+          local dev="${!dev_var:-}"
+          printf "  Node %d (%s)\n    Device %s..." "$i" "$node_name" "$dev"
+          if [[ -e "$dev" ]]; then echo " [OK]"
+          else echo " [WARN] not found"; all_ok=false; fi
+          ;;
+      esac
+    done
+    echo "  ─────────────────────────────────────────────────────"
+    if [[ "$all_ok" == "true" ]]; then
+      success "All nodes reachable."
+      break
+    else
+      warn "One or more nodes have connectivity issues."
+      echo
+      menu TEST_ACTION 2 "Re-test all nodes" "Continue anyway" "Abort and fix issues first"
+      case "$TEST_ACTION" in
+        1) continue ;;
+        3) error "Aborting. Fix connectivity issues and re-run setup.sh." ;;
+        *) break ;;
+      esac
+    fi
+  done
 }
 
 # ── Display existing nodes or fresh start menu ────────────────────────────────
@@ -943,8 +987,13 @@ else
   echo "  NOTE: Reduces SD writes by not recording access timestamps."
   menu NOATIME_CHOICE 1 "Yes  (recommended)" "No"
   if [[ "$NOATIME_CHOICE" == "1" ]]; then
-    sudo sed -i 's|\(PARTUUID=[^ ]*\s\+/\s\+ext4\s\+\)\(defaults\)|\1defaults,noatime|' /etc/fstab
-    success "noatime added to /etc/fstab (takes effect on next reboot)."
+    if sudo sed -i 's|\(PARTUUID=[^ ]*\s\+/\s\+ext4\s\+\)\(defaults\)|\1defaults,noatime|' /etc/fstab \
+        && grep -qE '^[^#].*\s/\s.*noatime' /etc/fstab; then
+      success "noatime added to /etc/fstab (takes effect on next reboot)."
+    else
+      warn "Could not add noatime automatically — fstab may use a non-standard format."
+      warn "Add 'noatime' to your root partition mount options in /etc/fstab manually."
+    fi
   else warn "Skipped noatime."; fi
 fi
 

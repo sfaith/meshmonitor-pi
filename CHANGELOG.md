@@ -14,9 +14,12 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   previously pairing was skipped for second/third BLE devices from the same scan
 - setup.sh: Pairing flow now uses interactive bluetoothctl session for full PIN
   support — resolves AuthenticationFailed on PIN/passkey-protected devices
+- setup.sh: edit_node BLE — pairing flow offered when MAC address is changed,
+  with option to pair immediately or defer; old address unpaired automatically
 - launch.sh: `status` subcommand — shows container health, last upgrade time,
   disk usage, and uptime: `./launch.sh status`
 - scan-ble.sh: Spinner during BLE scan — 10-15 second wait now shows progress
+- scan-ble.sh: Docker availability check — clear error if Docker not installed
 - README: BLE 'connecting' troubleshooting entry with manual pairing procedure
 - README: Quick Start fully rewritten — two-phase setup (Pi ready / install app),
   collapsible expert section, bootstrap commands, non-techie callout
@@ -37,6 +40,23 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - setup.sh: Post-start serial bridge aligned to `docker inspect` for consistency
 - setup.sh: "Add more nodes" BLE loop bounds validation — rejects non-numeric
   and out-of-range input, prevents blank MAC address written to .env
+- setup.sh: Port validation added to `add_tcp_node` and `edit_node` TCP path —
+  invalid or out-of-range ports now warn and default to 4403 instead of writing
+  bad values to .env
+- setup.sh: Invalid BLE MAC address in manual entry now warns and returns instead
+  of hard-exiting — user input from prior steps is preserved
+- setup.sh: Empty BLE MAC address in manual entry now warns and returns instead
+  of hard-exiting
+- setup.sh: `test_all_nodes` re-test loop converted from recursion to while loop
+  — eliminates unbounded call stack growth on repeated re-test
+- setup.sh: noatime sed now verifies the change landed and warns with manual
+  instructions if fstab format was not matched (e.g. non-PARTUUID or non-ext4)
+- launch.sh: Compose command array-quoted — paths with spaces no longer break
+  docker compose invocation
+- launch.sh: Running with no subcommand now prints a clear usage error instead
+  of passing empty args to docker compose
+- scan-ble.sh: Ctrl+C trap added — kills scan process and removes temp file
+  cleanly on interrupt
 - launch.sh: Comment updated to reflect manual use cases
 
 ### Changed

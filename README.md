@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.3.3-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
+![Version](https://img.shields.io/badge/version-0.3.4-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
@@ -30,15 +30,20 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    ```bash
    sudo apt update && sudo apt full-upgrade -y && sudo reboot
    ```
-4. SSH back in, install dependencies, run setup, and reboot:
+4. SSH back in, install dependencies and run setup:
    ```bash
    sudo apt install -y git curl openssl bluez && \
    git clone https://github.com/sfaith/meshmonitor-pi.git && \
    cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
-   ./setup.sh && sudo reboot
+   ./setup.sh
    ```
-5. Verify: `docker ps` — meshmonitor should show healthy
-6. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
+   > If Docker wasn't pre-installed, setup.sh will install it and relaunch itself automatically. Just follow the prompts — it picks up where it left off.
+5. Reboot to apply SD card optimizations:
+   ```bash
+   sudo reboot
+   ```
+6. Verify: `docker ps` — meshmonitor should show healthy
+7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
 

@@ -813,7 +813,7 @@ success ".env written."
 # -----------------------------------------------------------------------------
 info "Step 4/8 — SD Card Write Minimization"
 
-if grep -q 'noatime' /etc/fstab; then
+if grep -qE '^[^#].*\s/\s.*noatime' /etc/fstab; then
   success "noatime already set in /etc/fstab."
 else
   echo
@@ -977,7 +977,7 @@ CRON_LINE="${UPGRADE_MIN} ${UPGRADE_HOUR} * * * cd ${SCRIPT_DIR} && ${SCRIPT_DIR
 
 EXISTING_CRON=$(crontab -l 2>/dev/null || true)
 CLEAN_CRON=$(echo "$EXISTING_CRON" | grep -v "$CRON_MARKER" || true)
-echo -e "${CLEAN_CRON}\n${CRON_LINE}" | crontab -
+printf '%s\n%s\n' "$CLEAN_CRON" "$CRON_LINE" | crontab -
 success "Auto-upgrade cron installed/updated (daily at ${UPGRADE_TIME:-03:00})."
 success "Upgrade log: ${UPGRADE_LOG}"
 
@@ -1199,7 +1199,9 @@ if [[ "$FIRST_RUN" == "true" ]]; then
   echo
 fi
 echo
-print_bridge_box
+if [[ "$START_CHOICE" == "1" ]]; then
+  print_bridge_box
+fi
 print_notes
 echo "============================================================"
 
@@ -1212,7 +1214,9 @@ echo "============================================================"
   print_node_summary
   print_password_box
   echo
-  print_bridge_box
+  if [[ "$START_CHOICE" == "1" ]]; then
+    print_bridge_box
+  fi
   print_notes
 } > "$NEXT_STEPS_FILE"
 

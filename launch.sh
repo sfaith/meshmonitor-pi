@@ -4,7 +4,7 @@
 # =============================================================================
 #
 # NON-INTERACTIVE. Called by systemd on boot and by the cron job for upgrades.
-# Do NOT run this manually — run setup.sh instead.
+# Also used for manual operations: ./launch.sh pull, ./launch.sh up -d, ./launch.sh down
 #
 # What this script does:
 #   1. Reads node configuration from .env

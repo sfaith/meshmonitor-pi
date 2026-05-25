@@ -672,12 +672,39 @@ while [[ "$ADD_MORE" == "true" ]]; do
     fi
     if [[ "$MORE_CHOICE" -lt "$last" ]]; then
       ridx=$(( MORE_CHOICE - 1 ))
+      local_addr="${REMAINING_SCAN_ADDRS[$ridx]}"
+      local_name="${REMAINING_SCAN_NAMES[$ridx]}"
       eval "NODE_${NEXT_NODE}_TYPE=ble"
-      eval "NODE_${NEXT_NODE}_BLE_ADDRESS='${REMAINING_SCAN_ADDRS[$ridx]}'"
-      eval "NODE_${NEXT_NODE}_NAME='${REMAINING_SCAN_NAMES[$ridx]}'"
+      eval "NODE_${NEXT_NODE}_BLE_ADDRESS='${local_addr}'"
+      eval "NODE_${NEXT_NODE}_NAME='${local_name}'"
       REMAINING_SCAN_NAMES=("${REMAINING_SCAN_NAMES[@]:0:$ridx}" "${REMAINING_SCAN_NAMES[@]:$(( ridx + 1 ))}")
       REMAINING_SCAN_ADDRS=("${REMAINING_SCAN_ADDRS[@]:0:$ridx}" "${REMAINING_SCAN_ADDRS[@]:$(( ridx + 1 ))}")
       NODE_COUNT=$(( NODE_COUNT + 1 ))
+      # Offer pairing for this device
+      echo
+      echo "  ── Bluetooth Pairing ────────────────────────────────"
+      echo "  Pair now for a stable connection (recommended for"
+      echo "  PIN/passkey devices), or skip for devices with no PIN."
+      echo
+      menu PAIR_CHOICE 1 \
+        "Pair now  (recommended for PIN/passkey devices)" \
+        "Skip pairing  (only for devices with no PIN)"
+      if [[ "$PAIR_CHOICE" == "1" ]]; then
+        echo
+        echo "  You will now be dropped into a bluetoothctl session."
+        echo "  Run: scan on → pair ${local_addr} → trust ${local_addr} → exit"
+        echo
+        echo -en "  Press Enter to launch bluetoothctl: "
+        read -r _
+        bluetoothctl
+        if bluetoothctl info "$local_addr" 2>/dev/null | grep -q "Paired: yes"; then
+          success "Pairing confirmed: ${local_addr}"
+        else
+          warn "Pairing not detected — re-run setup.sh to pair if connection fails."
+        fi
+      else
+        warn "Skipping pairing — re-run setup.sh to pair if connection fails."
+      fi
       continue
     else
       ADD_MORE=false; break
@@ -943,6 +970,10 @@ echo "  Pull latest images and start the stack now?"
 echo "  NOTE: Safe on re-runs — containers restart only if configuration changed."
 menu START_CHOICE 1 "Yes  (recommended)" "No — I will start manually"
 
+# Capture first-run state before stack launch changes it
+FIRST_RUN=false
+is_first_run && FIRST_RUN=true
+
 if [[ "$START_CHOICE" == "1" ]]; then
   cd "$SCRIPT_DIR"
   chmod +x "$LAUNCH_SH"
@@ -1076,7 +1107,7 @@ print_bridge_box() {
 
 # ── Password box — first run only ────────────────────────────────────────────
 print_password_box() {
-  is_first_run || return 0
+  [[ "$FIRST_RUN" == "true" ]] || return 0
   cat <<EOF
 
   ╔══════════════════════════════════════════════════════╗
@@ -1102,7 +1133,10 @@ print_notes() {
   ── TROUBLESHOOTING ───────────────────────────────────
 
   BLE bridge not connecting?
-    docker logs meshmonitor-ble-1
+    docker logs meshmonitor-ble-1  (or meshmonitor-ble-2, etc.)
+
+  Serial bridge not connecting?
+    docker logs meshmonitor-serial-1
 
   Node not appearing after adding source?
     Dashboard → Sources — check the status indicator
@@ -1135,7 +1169,7 @@ echo "============================================================"
 echo
 print_node_summary
 print_password_box
-if is_first_run; then
+if [[ "$FIRST_RUN" == "true" ]]; then
   echo
   echo "  ── REBOOT REQUIRED ───────────────────────────────────"
   echo

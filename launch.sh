@@ -29,14 +29,16 @@ if [[ "${1:-}" == "status" ]]; then
   echo
   # Container health
   echo "  Containers:"
-  docker ps --format "    {{.Names}}\t{{.Status}}" | grep meshmonitor || \
+  docker ps --format "    {{.Names}}\t{{.Status}}" | grep -E "^\s+meshmonitor" || \
     echo "    (no meshmonitor containers running)"
   echo
 
-  # MeshMonitor health endpoint
+  # MeshMonitor health endpoint and version
   if docker inspect --format '{{.State.Running}}' meshmonitor 2>/dev/null | grep -q "true"; then
     HEALTH=$(docker inspect --format '{{.State.Health.Status}}' meshmonitor 2>/dev/null || echo "unknown")
-    echo "  Health : ${HEALTH}"
+    VERSION=$(docker exec meshmonitor cat /app/package.json 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"\([0-9.]*\)".*/\1/' || echo "unknown")
+    echo "  Health  : ${HEALTH}"
+    echo "  Version : v${VERSION}"
   fi
 
   # Last upgrade

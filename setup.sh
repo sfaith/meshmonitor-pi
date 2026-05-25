@@ -267,6 +267,7 @@ add_ble_node() {
       -v /var/lib/bluetooth:/var/lib/bluetooth:ro \
       ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan > /tmp/mm-ble-scan.txt 2>/dev/null &
     SCAN_PID=$!
+    trap "kill $SCAN_PID 2>/dev/null; rm -f /tmp/mm-ble-scan.txt" INT
     spinner='|/-\'
     i=0
     while kill -0 $SCAN_PID 2>/dev/null; do
@@ -274,6 +275,7 @@ add_ble_node() {
       i=$(( i + 1 ))
       sleep 0.2
     done
+    trap - INT
     printf "\r  Scanning... done\n"
     SCAN_OUTPUT=$(cat /tmp/mm-ble-scan.txt 2>/dev/null || true)
     rm -f /tmp/mm-ble-scan.txt
@@ -307,6 +309,12 @@ add_ble_node() {
     echo -en "  Select device [1]: "
     read -r pick
     [[ -z "$pick" ]] && pick=1
+    if ! [[ "$pick" =~ ^[0-9]+$ ]] || \
+       [[ "$pick" -lt 1 ]] || \
+       [[ "$pick" -gt "${#SCAN_ADDRS[@]}" ]]; then
+      warn "Invalid choice — defaulting to device 1."
+      pick=1
+    fi
     local pidx=$(( pick - 1 ))
     ble_addr="${SCAN_ADDRS[$pidx]}"
     ble_name="${SCAN_NAMES[$pidx]}"

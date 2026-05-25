@@ -43,7 +43,18 @@ echo
 docker run --rm --privileged \
   -v /var/run/dbus:/var/run/dbus \
   -v /var/lib/bluetooth:/var/lib/bluetooth:ro \
-  ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan
+  ghcr.io/yeraze/meshtastic-ble-bridge:latest --scan > /tmp/mm-ble-scan.txt 2>/dev/null &
+SCAN_PID=$!
+spinner='|/-\'
+i=0
+while kill -0 $SCAN_PID 2>/dev/null; do
+  printf "\r  Scanning... %s" "${spinner:$(( i % 4 )):1}"
+  i=$(( i + 1 ))
+  sleep 0.2
+done
+printf "\r  Scanning... done\n\n"
+cat /tmp/mm-ble-scan.txt
+rm -f /tmp/mm-ble-scan.txt
 
 echo
 echo "  ──────────────────────────────────────────────────────"

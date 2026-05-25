@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - TBD (pending BLE pairing solution)
+
+### Added
+- setup.sh: Remove node — option 6 fully implemented. Lists nodes, confirms
+  removal, unpairs BLE device from host, stops and removes bridge containers,
+  renumbers remaining nodes in .env, instructs user to delete source in Dashboard
+- setup.sh: BLE pairing offered for devices added from remaining scan results —
+  previously pairing was skipped for second/third BLE devices from the same scan
+- setup.sh: Pairing flow now uses interactive bluetoothctl session for full PIN
+  support — resolves AuthenticationFailed on PIN/passkey-protected devices
+- launch.sh: `status` subcommand — shows container health, last upgrade time,
+  disk usage, and uptime: `./launch.sh status`
+- scan-ble.sh: Spinner during BLE scan — 10-15 second wait now shows progress
+- README: BLE 'connecting' troubleshooting entry with manual pairing procedure
+- README: Quick Start fully rewritten — two-phase setup (Pi ready / install app),
+  collapsible expert section, bootstrap commands, non-techie callout
+
+### Fixed
+- setup.sh: All `nc` port checks replaced with `bash /dev/tcp` — nc not
+  pre-installed on Pi OS Lite
+- setup.sh: Post-start BLE/serial readiness checks use `docker inspect` instead
+  of `nc` inside container — nc not available in minimal bridge images
+- setup.sh: Bridge action output uses plain-text section — eliminates Unicode
+  box rendering issues across terminal emulators
+- setup.sh: Reboot notice shown on first run only — suppressed on re-runs
+- setup.sh: `is_first_run` captured before stack launch — correct behavior when
+  user skips step 8
+- setup.sh: Double connectivity test when choosing option 5 — test now runs once
+- setup.sh: `test_all_nodes` BLE check uses fast `docker ps` — replaces slow
+  10-15s blocking docker scan per BLE node
+- setup.sh: Post-start serial bridge aligned to `docker inspect` for consistency
+- setup.sh: "Add more nodes" BLE loop bounds validation — rejects non-numeric
+  and out-of-range input, prevents blank MAC address written to .env
+- launch.sh: Comment updated to reflect manual use cases
+
+### Changed
+- setup.sh: BLE pairing is now the recommended default (option 1) — previously
+  "connect without pairing" was default, causing silent failures on PIN devices
+- setup.sh: Serial bridge prerequisite command updated — adds missing
+  `--set serial.echo false` and `--set serial.baud BAUD_115200`
+- README: Serial node prerequisite command updated to match setup.sh
+- README: Prerequisites merged into Quick Start — removed as separate section
+- README: Day-to-Day Operations simplified, `./launch.sh status` added
+- README: Auto-Upgrade and troubleshooting sections tightened
+- README: Various stale docker compose references replaced with launch.sh
+
 ## [0.3.3] - 2026-05-23
 
 ### Added

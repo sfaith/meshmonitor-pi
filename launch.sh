@@ -21,6 +21,50 @@ ENV_FILE="${SCRIPT_DIR}/.env"
 GENERATED_COMPOSE="${SCRIPT_DIR}/docker-compose.generated.yml"
 
 # -----------------------------------------------------------------------------
+# Status subcommand
+# -----------------------------------------------------------------------------
+if [[ "${1:-}" == "status" ]]; then
+  echo
+  echo "  ── MeshMonitor Pi — Stack Status ─────────────────────"
+  echo
+  # Container health
+  echo "  Containers:"
+  docker ps --format "    {{.Names}}\t{{.Status}}" | grep meshmonitor || \
+    echo "    (no meshmonitor containers running)"
+  echo
+
+  # MeshMonitor health endpoint
+  if docker inspect --format '{{.State.Running}}' meshmonitor 2>/dev/null | grep -q "true"; then
+    HEALTH=$(docker inspect --format '{{.State.Health.Status}}' meshmonitor 2>/dev/null || echo "unknown")
+    echo "  Health : ${HEALTH}"
+  fi
+
+  # Last upgrade
+  UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
+  if [[ -f "$UPGRADE_LOG" ]]; then
+    LAST_UPGRADE=$(grep -E "^(Pull|Pulling|Digest)" "$UPGRADE_LOG" 2>/dev/null | tail -1 || true)
+    LAST_DATE=$(stat -c '%y' "$UPGRADE_LOG" 2>/dev/null | cut -d. -f1 || echo "unknown")
+    echo "  Last upgrade log: ${LAST_DATE}"
+    [[ -n "$LAST_UPGRADE" ]] && echo "    ${LAST_UPGRADE}"
+  else
+    echo "  Last upgrade: no log found"
+  fi
+  echo
+
+  # Disk usage
+  echo "  Disk:"
+  df -h / | awk 'NR==2 {printf "    Used: %s / %s (%s)\n", $3, $2, $5}'
+  echo
+
+  # Uptime
+  echo "  Uptime: $(uptime -p 2>/dev/null || uptime)"
+  echo
+  echo "  ─────────────────────────────────────────────────────"
+  echo
+  exit 0
+fi
+
+# -----------------------------------------------------------------------------
 # Load .env
 # -----------------------------------------------------------------------------
 if [[ ! -f "$ENV_FILE" ]]; then

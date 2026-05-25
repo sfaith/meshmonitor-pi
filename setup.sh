@@ -403,7 +403,9 @@ add_serial_node() {
   echo "  If not done, run from a computer connected to the device:"
   echo
   echo "    meshtastic --set serial.enabled true"
+  echo "    meshtastic --set serial.echo false"
   echo "    meshtastic --set serial.mode SIMPLE"
+  echo "    meshtastic --set serial.baud BAUD_115200"
   echo
   menu SERIAL_PREREQ 1 "Yes, serial mode is enabled" "No, I need to do that first"
   if [[ "$SERIAL_PREREQ" == "2" ]]; then
@@ -638,13 +640,14 @@ fi
 # ── Execute node action ───────────────────────────────────────────────────────
 ADD_MORE=true
 NEXT_NODE=$(( NODE_COUNT + 1 ))
+SKIP_CONNECTIVITY_TEST=false
 
 case "$NODE_ACTION" in
   1) ADD_MORE=false ;;
   2) add_tcp_node    "$NEXT_NODE" && NODE_COUNT=$(( NODE_COUNT + 1 )) || true ;;
   3) add_ble_node    "$NEXT_NODE" && NODE_COUNT=$(( NODE_COUNT + 1 )) || true ;;
   4) add_serial_node "$NEXT_NODE" && NODE_COUNT=$(( NODE_COUNT + 1 )) || true ;;
-  5) test_all_nodes; ADD_MORE=false ;;
+  5) test_all_nodes; ADD_MORE=false; SKIP_CONNECTIVITY_TEST=true ;;
   6) remove_node; ADD_MORE=false ;;
 esac
 
@@ -726,8 +729,8 @@ while [[ "$ADD_MORE" == "true" ]]; do
   esac
 done
 
-# Connectivity test before writing .env
-[[ "$NODE_COUNT" -gt 0 ]] && test_all_nodes
+# Connectivity test before writing .env (skip if user already ran it via option 5)
+[[ "$NODE_COUNT" -gt 0 ]] && [[ "$SKIP_CONNECTIVITY_TEST" == "false" ]] && test_all_nodes
 
 # ── Node summary ──────────────────────────────────────────────────────────────
 echo

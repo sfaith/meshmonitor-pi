@@ -152,6 +152,7 @@ Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false
 ```bash
 docker logs -f meshmonitor              # Live logs
 docker ps                               # Status (all containers)
+./launch.sh status                      # Health, last upgrade, disk, uptime
 ./launch.sh down                        # Stop stack
 ./launch.sh pull && ./launch.sh up -d  # Manual upgrade
 ./launch.sh down && ./launch.sh up -d  # Restart stack
@@ -171,7 +172,9 @@ Re-run `./setup.sh` and choose the appropriate option from the Node Connections 
 **Serial node:** Enable serial mode on the device first:
 ```bash
 meshtastic --set serial.enabled true
+meshtastic --set serial.echo false
 meshtastic --set serial.mode SIMPLE
+meshtastic --set serial.baud BAUD_115200
 ```
 
 ---
@@ -191,6 +194,22 @@ Username : azmshpub
 ---
 
 ## Troubleshooting
+
+**BLE source stuck on 'connecting'**
+
+Your device likely requires Bluetooth pairing before it will exchange data with the bridge. This affects PIN/passkey-protected devices. Re-run `./setup.sh`, select your BLE node, and choose to pair when prompted.
+
+If you need to pair manually:
+```bash
+docker stop meshmonitor-ble-1
+bluetoothctl
+scan on
+pair <YOUR_DEVICE_MAC>
+trust <YOUR_DEVICE_MAC>
+exit
+docker start meshmonitor-ble-1
+```
+Power cycle the device first if pairing is rejected.
 
 **Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port.
 

@@ -140,7 +140,14 @@ fi
 echo
 echo "  Current settings (press Enter to accept each):"
 prompt PI_IP         "Pi IP address      " "${PI_IP:-}"
+[[ -z "${PI_IP:-}" ]] && error "Pi IP address is required."
 prompt HOST_PORT     "MeshMonitor port   " "${HOST_PORT:-8080}"
+if ! [[ "${HOST_PORT}" =~ ^[0-9]+$ ]] || \
+   [[ "${HOST_PORT}" -lt 1 ]] || \
+   [[ "${HOST_PORT}" -gt 65535 ]]; then
+  warn "Invalid port '${HOST_PORT}' — defaulting to 8080."
+  HOST_PORT="8080"
+fi
 prompt TZ            "Timezone           " "${TZ:-America/Phoenix}"
 prompt UPGRADE_TIME  "Auto-upgrade time  " "${UPGRADE_TIME:-03:00}"
 if ! [[ "${UPGRADE_TIME}" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
@@ -162,7 +169,6 @@ echo
 echo "  ── Derived settings ──────────────────────────────────"
 echo "  ALLOWED_ORIGINS : ${ALLOWED_ORIGINS}"
 echo "  ──────────────────────────────────────────────────────"
-[[ -z "${PI_IP:-}" ]] && error "Pi IP address is required."
 
 # -----------------------------------------------------------------------------
 # Step 2 — Docker Installation
@@ -282,7 +288,7 @@ add_ble_node() {
     done
     trap - INT
     printf "\r  Scanning... done\n"
-    SCAN_OUTPUT=$(cat /tmp/mm-ble-scan.txt 2>/dev/null || true)
+    SCAN_OUTPUT=$(</tmp/mm-ble-scan.txt)
     rm -f /tmp/mm-ble-scan.txt
 
     if [[ -z "$SCAN_OUTPUT" ]]; then
@@ -855,7 +861,7 @@ JEOF
   else warn "Skipped volatile journal."; fi
 fi
 
-if grep -q 'tmpfs.*/var/log' /etc/fstab; then
+if grep -qE '^[^#].*tmpfs.*/var/log' /etc/fstab; then
   success "tmpfs /var/log already in /etc/fstab."
 else
   echo

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.3
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.4
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -275,12 +275,12 @@ add_tcp_node() {
   local pv="${!port_var:-4403}"
   if ! [[ "$pv" =~ ^[0-9]+$ ]] || [[ "$pv" -lt 1 ]] || [[ "$pv" -gt 65535 ]]; then
     warn "Invalid port '${pv}' — defaulting to 4403."
-    eval "NODE_${idx}_PORT=4403"
+    printf -v "NODE_${idx}_PORT" '%s' "4403"
     pv="4403"
   fi
   if bash -c "echo >/dev/tcp/${ip_val}/${pv}" 2>/dev/null; then success "Port ${pv} reachable OK"
   else warn "Port ${pv} not reachable — node may not be ready yet."; fi
-  eval "NODE_${idx}_TYPE=tcp"
+  printf -v "NODE_${idx}_TYPE" '%s' "tcp"
   success "TCP node ${idx} configured: ${ip_val}:${pv}"
 }
 
@@ -406,8 +406,8 @@ add_ble_node() {
     prompt "$name_var" "Node name          " "BLE Node"
   fi
 
-  eval "NODE_${idx}_BLE_ADDRESS='${ble_addr}'"
-  eval "NODE_${idx}_TYPE=ble"
+  printf -v "NODE_${idx}_BLE_ADDRESS" '%s' "${ble_addr}"
+  printf -v "NODE_${idx}_TYPE" '%s' "ble"
 
   echo
   echo "  ── Bluetooth Pairing ────────────────────────────────"
@@ -498,7 +498,7 @@ add_serial_node() {
   local dev_val="${!dev_var:-/dev/ttyACM0}"
   if [[ -e "$dev_val" ]]; then success "Device ${dev_val} found."
   else warn "Device ${dev_val} not found — ensure it is plugged in."; fi
-  eval "NODE_${idx}_TYPE=serial"
+  printf -v "NODE_${idx}_TYPE" '%s' "serial"
   success "Serial node ${idx} configured: ${dev_val}"
 }
 
@@ -563,7 +563,7 @@ edit_node() {
       local new_port="${!new_port_var:-4403}"
       if ! [[ "$new_port" =~ ^[0-9]+$ ]] || [[ "$new_port" -lt 1 ]] || [[ "$new_port" -gt 65535 ]]; then
         warn "Invalid port '${new_port}' — defaulting to 4403."
-        eval "NODE_${eidx}_PORT=4403"
+        printf -v "NODE_${eidx}_PORT" '%s' "4403"
         new_port="4403"
       fi
       echo
@@ -734,12 +734,12 @@ remove_node() {
     new_count=$(( new_count + 1 ))
     for suffix in TYPE NAME IP PORT BLE_ADDRESS SERIAL_DEVICE BAUD; do
       src_var="NODE_${i}_${suffix}"
-      [[ -n "${!src_var:-}" ]] && eval "NODE_${new_count}_${suffix}='${!src_var}'"
+      [[ -n "${!src_var:-}" ]] && printf -v "NODE_${new_count}_${suffix}" '%s' "${!src_var}"
     done
   done
   # Clear the last node slot
   for suffix in TYPE NAME IP PORT BLE_ADDRESS SERIAL_DEVICE BAUD; do
-    eval "NODE_$(( new_count + 1 ))_${suffix}=''"
+    printf -v "NODE_$(( new_count + 1 ))_${suffix}" '%s' ""
   done
   NODE_COUNT="$new_count"
   success "Node ${ridx} (${node_name}) removed. ${NODE_COUNT} node(s) remaining."
@@ -890,9 +890,9 @@ while [[ "$ADD_MORE" == "true" ]]; do
       ridx=$(( MORE_CHOICE - 1 ))
       local_addr="${REMAINING_SCAN_ADDRS[$ridx]}"
       local_name="${REMAINING_SCAN_NAMES[$ridx]}"
-      eval "NODE_${NEXT_NODE}_TYPE=ble"
-      eval "NODE_${NEXT_NODE}_BLE_ADDRESS='${local_addr}'"
-      eval "NODE_${NEXT_NODE}_NAME='${local_name}'"
+      printf -v "NODE_${NEXT_NODE}_TYPE"        '%s' "ble"
+      printf -v "NODE_${NEXT_NODE}_BLE_ADDRESS" '%s' "${local_addr}"
+      printf -v "NODE_${NEXT_NODE}_NAME"        '%s' "${local_name}"
       REMAINING_SCAN_NAMES=("${REMAINING_SCAN_NAMES[@]:0:$ridx}" "${REMAINING_SCAN_NAMES[@]:$(( ridx + 1 ))}")
       REMAINING_SCAN_ADDRS=("${REMAINING_SCAN_ADDRS[@]:0:$ridx}" "${REMAINING_SCAN_ADDRS[@]:$(( ridx + 1 ))}")
       NODE_COUNT=$(( NODE_COUNT + 1 ))

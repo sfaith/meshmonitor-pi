@@ -29,7 +29,7 @@ if [[ "${1:-}" == "status" ]]; then
   echo
   # Container health
   echo "  Containers:"
-  docker ps --format "    {{.Names}}\t{{.Status}}" | grep "^    meshmonitor" || \
+  docker ps --format "{{.Names}}\t{{.Status}}" | grep "^meshmonitor" | sed 's/^/    /' || \
     echo "    (no meshmonitor containers running)"
   echo
 

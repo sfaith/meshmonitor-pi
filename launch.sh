@@ -41,15 +41,26 @@ if [[ "${1:-}" == "status" ]]; then
     echo "  Version : v${VERSION}"
   fi
 
+  # Web UI URL
+  if [[ -f "$ENV_FILE" ]]; then
+    set +u
+    source "$ENV_FILE" 2>/dev/null || true
+    set -u
+    PI_IP="${PI_IP:-?}"
+    HOST_PORT="${HOST_PORT:-8080}"
+    echo "  URL     : http://${PI_IP}:${HOST_PORT}"
+  fi
+
   # Last upgrade
   UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
   if [[ -f "$UPGRADE_LOG" ]]; then
-    LAST_UPGRADE=$(grep -E "^(Pull|Pulling|Digest)" "$UPGRADE_LOG" 2>/dev/null | tail -1 || true)
     LAST_DATE=$(stat -c '%y' "$UPGRADE_LOG" 2>/dev/null | cut -d. -f1 || echo "unknown")
-    echo "  Last upgrade log: ${LAST_DATE}"
-    [[ -n "$LAST_UPGRADE" ]] && echo "    ${LAST_UPGRADE}"
+    # Look for pulled image digest or "up-to-date" confirmation
+    LAST_LINE=$(grep -E "(ghcr\.io|Status:|up-to-date|newer|pulled)" "$UPGRADE_LOG" 2>/dev/null | tail -1 || true)
+    echo "  Last upgrade : ${LAST_DATE}"
+    [[ -n "$LAST_LINE" ]] && echo "    ${LAST_LINE}"
   else
-    echo "  Last upgrade: no log found"
+    echo "  Last upgrade : no log found"
   fi
   echo
 

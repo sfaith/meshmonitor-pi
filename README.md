@@ -172,6 +172,7 @@ Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false
 docker logs -f meshmonitor              # Live logs
 docker ps                               # Status (all containers)
 ./launch.sh status                      # Health, last upgrade, disk, uptime
+./launch.sh up -d                       # Start stack
 ./launch.sh down                        # Stop stack
 ./launch.sh pull && ./launch.sh up -d  # Manual upgrade
 ./launch.sh down && ./launch.sh up -d  # Restart stack

@@ -33,12 +33,16 @@ UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # If Docker is installed but we're not in the docker group, relaunch now.
+# No state preservation needed here — step 1 hasn't run yet.
 if command -v docker &>/dev/null && ! docker info &>/dev/null 2>&1; then
   echo "Docker is installed but not accessible — relaunching under 'newgrp docker'..."
   exec newgrp docker <<NEWGRP
     cd "${SCRIPT_DIR}" && bash setup.sh
 NEWGRP
 fi
+
+# State file path used for preserving step 1 values across Docker-install relaunch.
+MM_STATE_FILE="/tmp/mm-setup-state.env"
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -116,6 +120,24 @@ echo
 echo "  Press Ctrl+C at any time to abort."
 
 # -----------------------------------------------------------------------------
+# State file: stale cleanup and resume detection
+# Must run after helpers are defined (uses info/warn) and after the banner.
+# -----------------------------------------------------------------------------
+
+# Clean up stale state file from a prior aborted run (no relaunch marker set).
+if [[ -f "$MM_STATE_FILE" ]] && [[ "${MM_RELAUNCH:-}" != "1" ]]; then
+  rm -f "$MM_STATE_FILE"
+fi
+
+# Restore step 1 values if we were relaunched after a Docker install.
+if [[ "${MM_RELAUNCH:-}" == "1" ]] && [[ -f "$MM_STATE_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$MM_STATE_FILE"
+  rm -f "$MM_STATE_FILE"
+  info "Resuming setup after Docker installation — step 1 values restored."
+fi
+
+# -----------------------------------------------------------------------------
 # Step 1 — Pi Configuration
 # -----------------------------------------------------------------------------
 info "Step 1/8 — Pi Configuration"
@@ -191,7 +213,17 @@ else
   sudo usermod -aG docker "${USER}"
   success "Docker installed."
   warn "Relaunching under 'newgrp docker' to continue..."
+  # Preserve step 1 values across the relaunch — sourced on resume at top of script.
+  {
+    printf 'PI_IP=%q\n'         "${PI_IP:-}"
+    printf 'HOST_PORT=%q\n'     "${HOST_PORT:-}"
+    printf 'TZ=%q\n'            "${TZ:-}"
+    printf 'UPGRADE_TIME=%q\n'  "${UPGRADE_TIME:-}"
+    printf 'SESSION_SECRET=%q\n' "${SESSION_SECRET:-}"
+  } > "$MM_STATE_FILE"
+  chmod 600 "$MM_STATE_FILE"
   exec newgrp docker <<NEWGRP
+    export MM_RELAUNCH=1
     cd "${SCRIPT_DIR}" && bash setup.sh
 NEWGRP
 fi
@@ -229,6 +261,11 @@ add_tcp_node() {
   local ip_var="NODE_${idx}_IP"
   local ip_val="${!ip_var:-}"
   [[ -z "$ip_val" ]] && error "IP address is required."
+  if ! [[ "$ip_val" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    warn "Invalid IP address format '${ip_val}' — expected format: 10.0.0.1"
+    warn "Re-run setup.sh to add this node."
+    return 1
+  fi
   echo
   echo "  Testing connectivity..."
   if ping -c1 -W2 "$ip_val" &>/dev/null 2>&1; then success "Ping ${ip_val} OK"
@@ -516,6 +553,11 @@ edit_node() {
       local new_ip_var="NODE_${eidx}_IP"
       local new_ip="${!new_ip_var:-}"
       [[ -z "$new_ip" ]] && error "IP address is required."
+      if ! [[ "$new_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        warn "Invalid IP address format '${new_ip}' — expected format: 10.0.0.1"
+        warn "TCP node ${eidx} not updated — re-run setup.sh to edit."
+        return
+      fi
       prompt "NODE_${eidx}_PORT" "Node port          " "${!port_var:-4403}"
       local new_port_var="NODE_${eidx}_PORT"
       local new_port="${!new_port_var:-4403}"

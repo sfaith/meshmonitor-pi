@@ -20,6 +20,11 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   disk usage, and uptime: `./launch.sh status`
 - scan-ble.sh: Spinner during BLE scan — 10-15 second wait now shows progress
 - scan-ble.sh: Docker availability check — clear error if Docker not installed
+- tests/test_setup.sh: logic test suite — 56 tests covering IP/MAC/port/time
+  validation, node renumber logic, and .env hash comparison; no Pi or Docker
+  required; exit code 0 on full pass
+- README: Quick Start collapsible step 4 split into separate setup and reboot
+  commands with Docker-relaunch note; step numbering updated accordingly
 - README: BLE 'connecting' troubleshooting entry with manual pairing procedure
 - README: Quick Start fully rewritten — two-phase setup (Pi ready / install app),
   collapsible expert section, bootstrap commands, non-techie callout
@@ -40,9 +45,11 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - setup.sh: Post-start serial bridge aligned to `docker inspect` for consistency
 - setup.sh: "Add more nodes" BLE loop bounds validation — rejects non-numeric
   and out-of-range input, prevents blank MAC address written to .env
-- setup.sh: Port validation added to `add_tcp_node` and `edit_node` TCP path —
-  invalid or out-of-range ports now warn and default to 4403 instead of writing
-  bad values to .env
+- setup.sh: IP address validation added to `add_tcp_node` and `edit_node` TCP
+  path — invalid format warns and returns instead of writing bad values to .env
+- setup.sh: Step 1 values (PI_IP, HOST_PORT, TZ, UPGRADE_TIME, SESSION_SECRET)
+  now preserved across Docker-install relaunch via secure temp state file;
+  stale state files from aborted runs cleaned up automatically on next start
 - setup.sh: Invalid BLE MAC address in manual entry now warns and returns instead
   of hard-exiting — user input from prior steps is preserved
 - setup.sh: Empty BLE MAC address in manual entry now warns and returns instead

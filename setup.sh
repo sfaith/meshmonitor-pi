@@ -147,7 +147,7 @@ prompt UPGRADE_TIME  "Auto-upgrade time  " "${UPGRADE_TIME:-03:00}"
 # Auto-generate SESSION_SECRET on first run, never overwrite
 if [[ -z "${SESSION_SECRET:-}" ]] || [[ "${SESSION_SECRET}" == *"REPLACE_WITH"* ]]; then
   SESSION_SECRET=$(openssl rand -hex 32 2>/dev/null || \
-    cat /proc/sys/kernel/random/uuid | tr -d '-' | head -c 32)
+    tr -d '-' < /proc/sys/kernel/random/uuid | head -c 32)
   success "Session secret generated automatically."
 else
   success "Session secret already configured — keeping existing value."
@@ -214,6 +214,7 @@ add_tcp_node() {
   prompt "NODE_${idx}_IP"   "Node IP address    " ""
   local ip_var="NODE_${idx}_IP"
   local ip_val="${!ip_var:-}"
+  [[ -z "$ip_val" ]] && error "IP address is required."
   echo
   echo "  Testing connectivity..."
   if ping -c1 -W2 "$ip_val" &>/dev/null 2>&1; then success "Ping ${ip_val} OK"
@@ -362,7 +363,6 @@ add_ble_node() {
 
   if [[ "$PAIR_CHOICE" == "1" ]]; then
     echo
-    echo "  ── Bluetooth Pairing ────────────────────────────────"
     echo "  Make sure your device is:"
     echo "    • Powered on and nearby (within ~10 meters)"
     echo "    • Not connected to another phone or app"
@@ -477,6 +477,16 @@ remove_node() {
   echo "  Remove Node ${ridx}: ${node_name} (${node_type})?"
   menu CONFIRM_REMOVE 2 "Yes, remove this node" "No, cancel"
   [[ "$CONFIRM_REMOVE" == "2" ]] && return
+
+  # TCP — inform user to remove source from MeshMonitor
+  if [[ "$node_type" == "tcp" ]]; then
+    echo
+    echo "  ── MeshMonitor Source ────────────────────────────────"
+    echo "  If you added this node as a source in MeshMonitor,"
+    echo "  remove it manually:"
+    echo "    Dashboard → Sources → ${node_name} → Delete"
+    echo "  ─────────────────────────────────────────────────────"
+  fi
 
   # BLE — unpair from host and stop bridge container
   if [[ "$node_type" == "ble" ]] && [[ -n "$ble_addr" ]]; then

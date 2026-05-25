@@ -507,6 +507,14 @@ edit_node() {
       local new_ip="${!new_ip_var:-}"
       [[ -z "$new_ip" ]] && error "IP address is required."
       prompt "NODE_${eidx}_PORT" "Node port          " "${!port_var:-4403}"
+      local new_port_var="NODE_${eidx}_PORT"
+      local new_port="${!new_port_var:-4403}"
+      echo
+      echo "  Testing connectivity..."
+      if ping -c1 -W2 "$new_ip" &>/dev/null 2>&1; then success "Ping ${new_ip} OK"
+      else warn "Cannot ping ${new_ip} — check the IP and try again."; fi
+      if bash -c "echo >/dev/tcp/${new_ip}/${new_port}" 2>/dev/null; then success "Port ${new_port} reachable OK"
+      else warn "Port ${new_port} not reachable — node may not be ready yet."; fi
       success "TCP node ${eidx} updated."
       ;;
     ble)

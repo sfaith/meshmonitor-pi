@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.4] - TBD (pending BLE pairing solution)
+## [0.3.4] - 2026-05-24
 
 ### Added
 - setup.sh: Remove node — option 6 fully implemented. Lists nodes, confirms

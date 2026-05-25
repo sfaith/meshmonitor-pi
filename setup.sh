@@ -49,10 +49,14 @@ warn()    { echo -e "\e[1;33m[WARN]\e[0m  $*"; }
 error()   { echo -e "\e[1;31m[ERROR]\e[0m $*" >&2; exit 1; }
 
 prompt() {
-  local var="$1" label="$2" current="$3"
+  local var="$1" label="$2" current="$3" placeholder="${4:-}"
   local input
   echo -en "\n  ${label}"
-  [[ -n "$current" ]] && echo -en " \e[2m[${current}]\e[0m"
+  if [[ -n "$current" ]]; then
+    echo -en " \e[2m[${current}]\e[0m"
+  elif [[ -n "$placeholder" ]]; then
+    echo -en " \e[2m(e.g. ${placeholder})\e[0m"
+  fi
   echo -en " (press Enter to accept): "
   read -r input
   if [[ -n "$input" ]]; then
@@ -139,7 +143,7 @@ fi
 
 echo
 echo "  Current settings (press Enter to accept each):"
-prompt PI_IP         "Pi IP address      " "${PI_IP:-}"
+prompt PI_IP         "Pi IP address      " "${PI_IP:-}" "192.168.1.40"
 [[ -z "${PI_IP:-}" ]] && error "Pi IP address is required."
 prompt HOST_PORT     "MeshMonitor port   " "${HOST_PORT:-8080}"
 if ! [[ "${HOST_PORT}" =~ ^[0-9]+$ ]] || \
@@ -221,7 +225,7 @@ add_tcp_node() {
   echo
   echo "  ── TCP Node ─────────────────────────────────────────"
   prompt "NODE_${idx}_NAME" "Node name          " "Meshtastic Node"
-  prompt "NODE_${idx}_IP"   "Node IP address    " ""
+  prompt "NODE_${idx}_IP"   "Node IP address    " "" "10.0.0.1"
   local ip_var="NODE_${idx}_IP"
   local ip_val="${!ip_var:-}"
   [[ -z "$ip_val" ]] && error "IP address is required."
@@ -344,7 +348,7 @@ add_ble_node() {
       REMAINING_SCAN_ADDRS+=("${SCAN_ADDRS[$i]}")
     done
   else
-    prompt "NODE_${idx}_BLE_ADDRESS" "BLE MAC address    " ""
+    prompt "NODE_${idx}_BLE_ADDRESS" "BLE MAC address    " "" "AA:BB:CC:DD:EE:FF"
     local av="NODE_${idx}_BLE_ADDRESS"
     ble_addr="${!av:-}"
     [[ -z "$ble_addr" ]] && error "BLE MAC address is required."

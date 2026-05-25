@@ -143,6 +143,10 @@ prompt PI_IP         "Pi IP address      " "${PI_IP:-}"
 prompt HOST_PORT     "MeshMonitor port   " "${HOST_PORT:-8080}"
 prompt TZ            "Timezone           " "${TZ:-America/Phoenix}"
 prompt UPGRADE_TIME  "Auto-upgrade time  " "${UPGRADE_TIME:-03:00}"
+if ! [[ "${UPGRADE_TIME}" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
+  warn "Invalid time format '${UPGRADE_TIME}' — defaulting to 03:00."
+  UPGRADE_TIME="03:00"
+fi
 
 # Auto-generate SESSION_SECRET on first run, never overwrite
 if [[ -z "${SESSION_SECRET:-}" ]] || [[ "${SESSION_SECRET}" == *"REPLACE_WITH"* ]]; then
@@ -337,6 +341,10 @@ add_ble_node() {
     prompt "NODE_${idx}_BLE_ADDRESS" "BLE MAC address    " ""
     local av="NODE_${idx}_BLE_ADDRESS"
     ble_addr="${!av:-}"
+    [[ -z "$ble_addr" ]] && error "BLE MAC address is required."
+    if ! [[ "$ble_addr" =~ ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$ ]]; then
+      error "Invalid MAC address format. Expected XX:XX:XX:XX:XX:XX (e.g. C7:03:DC:E9:D0:66)"
+    fi
     local name_var="NODE_${idx}_NAME"
     prompt "$name_var" "Node name          " "BLE Node"
   fi

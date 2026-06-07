@@ -134,7 +134,7 @@ Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the p
 |---|---|
 | **Board** | Raspberry Pi 4 (4 GB RAM) |
 | **SD card** | 32 GB Samsung Endurance Pro |
-| **OS** | Raspberry Pi OS Lite 64-bit (bookworm) |
+| **OS** | Raspberry Pi OS Lite 64-bit (trixie) |
 
 ### Supported Boards
 

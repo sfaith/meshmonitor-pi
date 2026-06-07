@@ -138,7 +138,7 @@ cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh
 ./setup.sh
 ```
 
-The wizard hardens the OS, installs Docker, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
+The wizard installs Docker, applies SD card and storage optimizations, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
 
 **5. Reboot to apply SD card and storage optimizations**
 
@@ -164,7 +164,7 @@ Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the p
 
 ## SD Card Write Minimization
 
-Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false`, tmpfs for MeshMonitor logs, and OS hardening (`noatime`, volatile journal, tmpfs `/var/log`) — all applied automatically by `setup.sh`. The only necessary writes are the SQLite database and Docker image layers during upgrades.
+Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false`, tmpfs for MeshMonitor logs, and SD card optimizations (`noatime`, volatile journal, tmpfs `/var/log`) — all applied automatically by `setup.sh`. The only necessary writes are the SQLite database and Docker image layers during upgrades.
 
 ---
 

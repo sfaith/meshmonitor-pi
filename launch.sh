@@ -4,7 +4,7 @@
 # =============================================================================
 #
 # NON-INTERACTIVE. Called by systemd on boot and by the cron job for upgrades.
-# Also used for manual operations: ./launch.sh up -d, ./launch.sh down, ./launch.sh pull, ./launch.sh status
+# Also used for manual operations: ./launch.sh up -d, ./launch.sh down, ./launch.sh pull, ./launch.sh status, ./launch.sh prune
 #
 # What this script does:
 #   1. Reads node configuration from .env
@@ -19,6 +19,29 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 GENERATED_COMPOSE="${SCRIPT_DIR}/docker-compose.generated.yml"
+
+# -----------------------------------------------------------------------------
+# Prune subcommand
+# -----------------------------------------------------------------------------
+if [[ "${1:-}" == "prune" ]]; then
+  UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
+  echo
+  echo "  ── MeshMonitor Pi — Docker Prune ─────────────────────"
+  echo
+  echo "  Removing unused images, containers, and networks..."
+  echo "  (volumes are never touched)"
+  echo
+  {
+    echo "──────────────────────────────────────────────────────"
+    echo "  Docker prune — $(date)"
+    echo "──────────────────────────────────────────────────────"
+    docker system prune -af 2>&1
+    echo
+  } | tee -a "${UPGRADE_LOG}"
+  echo "  ─────────────────────────────────────────────────────"
+  echo
+  exit 0
+fi
 
 # -----------------------------------------------------------------------------
 # Status subcommand
@@ -211,7 +234,7 @@ fi
 # Require a subcommand — running with no args passes nothing to docker compose
 # which prints its own help, but we give a clearer message first.
 if [[ $# -eq 0 ]]; then
-  echo "[ERROR] No subcommand given. Usage: launch.sh <up -d | down | pull | status>" >&2
+  echo "[ERROR] No subcommand given. Usage: launch.sh <up -d | down | pull | status | prune>" >&2
   exit 1
 fi
 

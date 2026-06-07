@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.4
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.5
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -100,7 +100,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.4"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.5"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -1184,14 +1184,17 @@ success "meshmonitor.service installed and enabled."
 
 # Auto-upgrade cron (always update to reflect current SCRIPT_DIR and time)
 CRON_MARKER="meshmonitor-pi auto-upgrade"
+PRUNE_MARKER="meshmonitor-pi weekly-prune"
 UPGRADE_HOUR=$(echo "${UPGRADE_TIME:-03:00}" | cut -d: -f1)
 UPGRADE_MIN=$(echo "${UPGRADE_TIME:-03:00}"  | cut -d: -f2)
 CRON_LINE="${UPGRADE_MIN} ${UPGRADE_HOUR} * * * cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/launch.sh pull && ${SCRIPT_DIR}/launch.sh up -d >> ${UPGRADE_LOG} 2>&1 && tail -500 ${UPGRADE_LOG} > /tmp/mm-trim && mv /tmp/mm-trim ${UPGRADE_LOG} # ${CRON_MARKER}"
+PRUNE_LINE="0 4 * * 0 cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/launch.sh prune >> ${UPGRADE_LOG} 2>&1 # ${PRUNE_MARKER}"
 
 EXISTING_CRON=$(crontab -l 2>/dev/null || true)
-CLEAN_CRON=$(echo "$EXISTING_CRON" | grep -v "$CRON_MARKER" || true)
-printf '%s\n%s\n' "$CLEAN_CRON" "$CRON_LINE" | crontab -
+CLEAN_CRON=$(echo "$EXISTING_CRON" | grep -v "$CRON_MARKER" | grep -v "$PRUNE_MARKER" || true)
+printf '%s\n%s\n%s\n' "$CLEAN_CRON" "$CRON_LINE" "$PRUNE_LINE" | crontab -
 success "Auto-upgrade cron installed/updated (daily at ${UPGRADE_TIME:-03:00})."
+success "Weekly prune cron installed/updated (Sundays at 04:00)."
 success "Upgrade log: ${UPGRADE_LOG}"
 
 # -----------------------------------------------------------------------------

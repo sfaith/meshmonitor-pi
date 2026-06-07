@@ -156,7 +156,7 @@ Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the p
 
 ### SD Card
 
-Use an endurance-rated card — cheap cards fail under 24/7 low-level writes. **Recommended:** Samsung Endurance Pro, SanDisk High Endurance. **Avoid:** SanDisk Ultra, Kingston, unbranded. 32 GB is the sweet spot — the full stack uses around 6 GB.
+Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones and will fail prematurely under continuous writes. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — the full stack uses around 6 GB.
 
 ---
 

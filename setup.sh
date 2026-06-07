@@ -1429,9 +1429,20 @@ if [[ "$FIRST_RUN" == "true" ]]; then
   echo
   echo "  ── REBOOT REQUIRED ───────────────────────────────────"
   echo
-  echo "  Run this now to apply SD card optimizations:"
-  echo "    sudo reboot"
+  echo "  A reboot is needed to apply SD card and storage optimizations."
   echo
+  menu REBOOT_NOW 1 "Reboot now (recommended)" "I will reboot manually later"
+  if [[ "$REBOOT_NOW" == "1" ]]; then
+    echo
+    echo "  Rebooting in 5 seconds — SSH will disconnect..."
+    sleep 5
+    sudo reboot
+  else
+    echo
+    echo "  Remember to reboot before relying on SD card optimizations."
+    echo "    sudo reboot"
+    echo
+  fi
 fi
 echo
 if [[ "$START_CHOICE" == "1" ]]; then

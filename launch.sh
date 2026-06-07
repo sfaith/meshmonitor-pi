@@ -34,8 +34,8 @@ write_result() {
   ts="$(date '+%Y-%m-%d %H:%M:%S')"
   {
     echo "OUTCOME=${outcome}"
-    echo "TIMESTAMP=${ts}"
-    echo "REASON=${reason}"
+    echo "TIMESTAMP=\"${ts}\""
+    echo "REASON=\"${reason}\""
   } > "${RESULT_FILE}"
 }
 

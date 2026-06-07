@@ -42,7 +42,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    ```bash
    sudo reboot
    ```
-6. Verify: `docker ps` — meshmonitor should show healthy
+6. Verify: `docker ps` — meshmonitor should show healthy (may take a few minutes on first boot)
 7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
@@ -117,6 +117,8 @@ This applies the SD card optimizations (`noatime`, tmpfs `/var/log`) configured 
 ```bash
 docker ps   # meshmonitor should show healthy
 ```
+
+> The container may take a few minutes to start and report healthy — this is normal on first boot or after an upgrade.
 
 Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the password immediately**.
 

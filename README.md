@@ -212,13 +212,23 @@ meshtastic --set serial.baud BAUD_115200
 
 **Dashboard → Sources → Add → MQTT**
 
-For the Arizona regional mesh:
+For the official Meshtastic public broker:
+```
+Broker   : mqtt.meshtastic.org
+Topic    : msh/US/2/e/LongFast/#   (adjust region — see docs)
+Username : meshdev
+Password : large4cats
+```
+
+For regional brokers, check your local mesh community. Example (Arizona mesh):
 ```
 Broker   : mqtt.azmsh.net
 Topic    : msh/US/AZ/Tucson/#
 Username : azmshpub
+Password : (find in the AZ Mesh Discord — https://azmsh.net/)
 ```
-*Check your regional mesh community for the correct broker and topic.*
+
+See the [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations/mqtt/) for full topic structure and regional guidance. Regional brokers are coordinated via local mesh communities — check the [Meshtastic Discord](https://discord.com/invite/ktMAKGBnBs) for your region.
 
 ---
 

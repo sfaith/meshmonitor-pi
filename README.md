@@ -59,6 +59,40 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 ---
 
+## Hardware
+
+### Tested Configuration
+
+| Component | Used |
+|---|---|
+| **Board** | Raspberry Pi 4 (4 GB RAM) |
+| **SD card** | 32 GB Samsung Endurance Pro |
+| **OS** | Raspberry Pi OS Lite 64-bit (trixie) |
+
+### Supported Boards
+
+| Board | Architecture | Status |
+|---|---|---|
+| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup |
+| Pi 4 (any RAM) | arm64 | ✅ Tested |
+| Pi 5 | arm64 | ✅ Should work — same architecture, faster |
+| Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
+
+### RAM
+
+| RAM | Verdict |
+|---|---|
+| 1 GB | ⚠️ Tight |
+| 2 GB | ✅ Comfortable |
+| 4 GB | ✅ Tested |
+| 8 GB | ✅ No issues |
+
+### SD Card
+
+Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones rather than long-term continuous operation. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — the base install uses around 6 GB, but actual usage grows with mesh size and data retention settings.
+
+---
+
 ### Phase 1 — Get the Pi ready
 
 **1. Write the SD card**
@@ -123,40 +157,6 @@ docker ps   # meshmonitor should show healthy
 Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the password immediately**.
 
 > `setup.sh` is safe to re-run at any time. To supply your own session secret, run `openssl rand -hex 32`, set `SESSION_SECRET=<output>` in `.env`, then run setup.
-
----
-
-## Hardware
-
-### Tested Configuration
-
-| Component | Used |
-|---|---|
-| **Board** | Raspberry Pi 4 (4 GB RAM) |
-| **SD card** | 32 GB Samsung Endurance Pro |
-| **OS** | Raspberry Pi OS Lite 64-bit (trixie) |
-
-### Supported Boards
-
-| Board | Architecture | Status |
-|---|---|---|
-| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup |
-| Pi 4 (any RAM) | arm64 | ✅ Tested |
-| Pi 5 | arm64 | ✅ Should work — same architecture, faster |
-| Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
-
-### RAM
-
-| RAM | Verdict |
-|---|---|
-| 1 GB | ⚠️ Tight |
-| 2 GB | ✅ Comfortable |
-| 4 GB | ✅ Tested |
-| 8 GB | ✅ No issues |
-
-### SD Card
-
-Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones rather than long-term continuous operation. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — the base install uses around 6 GB, but actual usage grows with mesh size and data retention settings.
 
 ---
 

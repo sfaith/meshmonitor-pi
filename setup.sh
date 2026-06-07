@@ -35,10 +35,8 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # If Docker is installed but we're not in the docker group, relaunch now.
 # No state preservation needed here — step 1 hasn't run yet.
 if command -v docker &>/dev/null && ! docker info &>/dev/null 2>&1; then
-  echo "Docker is installed but not accessible — relaunching under 'newgrp docker'..."
-  exec newgrp docker <<NEWGRP
-    cd "${SCRIPT_DIR}" && bash setup.sh
-NEWGRP
+  echo "Docker is installed but not accessible — relaunching under docker group..."
+  exec sg docker "cd '${SCRIPT_DIR}' && bash '${SCRIPT_DIR}/setup.sh'"
 fi
 
 # State file path used for preserving step 1 values across Docker-install relaunch.
@@ -228,10 +226,7 @@ else
     printf 'SESSION_SECRET=%q\n' "${SESSION_SECRET:-}"
   } > "$MM_STATE_FILE"
   chmod 600 "$MM_STATE_FILE"
-  exec newgrp docker <<NEWGRP
-    export MM_RELAUNCH=1
-    cd "${SCRIPT_DIR}" && bash setup.sh
-NEWGRP
+  exec sg docker "cd '${SCRIPT_DIR}' && MM_RELAUNCH=1 bash '${SCRIPT_DIR}/setup.sh'"
 fi
 
 if ! docker compose version &>/dev/null; then

@@ -234,6 +234,18 @@ See the [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations
 
 ## Troubleshooting
 
+**Serial source not connecting**
+
+Check the bridge container logs first:
+```bash
+docker logs meshmonitor-serial-1
+```
+Common causes:
+- Wrong device path — run `ls /dev/ttyACM* /dev/ttyUSB*` to find the correct device
+- Serial mode not enabled on the device — see [Adding More Nodes](#adding-more-nodes) for the config commands
+- Permission denied — add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
+- Device reboot on connect — normal; the bridge disables HUPCL automatically on startup
+
 **BLE source stuck on 'connecting'**
 
 Your device likely requires Bluetooth pairing before it will exchange data with the bridge. This affects PIN/passkey-protected devices. Re-run `./setup.sh`, select your BLE node, and choose to pair when prompted.
@@ -255,7 +267,7 @@ Power cycle the device first if pairing is rejected.
 **Node not connecting**
 ```bash
 ping YOUR_NODE_IP
-curl -v telnet://YOUR_NODE_IP:4403
+nc -zv YOUR_NODE_IP 4403
 ```
 
 **UI broke after overnight upgrade** — check the log, then the upstream CHANGELOG:
@@ -277,6 +289,18 @@ docker volume rm meshmonitor-pi_meshmonitor-data
 ## Maintenance
 
 Check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) periodically — env var changes or new required variables can occasionally require a config update.
+
+**Disk space** — Docker accumulates stale image layers over time from daily auto-upgrades. A weekly prune cron is installed automatically by `setup.sh`. To reclaim space manually:
+```bash
+./launch.sh prune
+```
+
+**Health check** — a quick way to verify everything is running correctly after a period away:
+```bash
+./launch.sh status
+```
+
+This shows container health, MeshMonitor version, last upgrade outcome, NTFY alert status, disk usage, and uptime in one view.
 
 ---
 

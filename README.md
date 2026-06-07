@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.3.5-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
+![Version](https://img.shields.io/badge/version-0.3.6-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
@@ -181,6 +181,12 @@ cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade or prune
 ```
 
 Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`.
+
+### Upgrade Failure Alerts
+
+Set `NTFY_TOPIC` in `.env` to receive a push notification if the nightly upgrade fails. Pick any unique string as your topic name (treat it like a password), install the [ntfy app](https://ntfy.sh) on your phone, and subscribe to your topic. No account required. If `NTFY_TOPIC` is unset, alerting is silently disabled.
+
+The last upgrade outcome is always visible in `./launch.sh status` regardless of alert configuration.
 
 ---
 

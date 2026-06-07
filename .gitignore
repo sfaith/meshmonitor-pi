@@ -4,6 +4,9 @@
 # Generated at runtime by launch.sh — not a source file
 docker-compose.generated.yml
 
+# Runtime state files — Pi-local, never committed
+.meshmonitor-upgrade-result
+
 # Local Claude context files
 CLAUDE.md
 NewChatPrompt.md

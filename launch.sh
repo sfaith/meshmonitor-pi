@@ -19,12 +19,49 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 GENERATED_COMPOSE="${SCRIPT_DIR}/docker-compose.generated.yml"
+UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
+RESULT_FILE="${HOME}/.meshmonitor-upgrade-result"
+
+# -----------------------------------------------------------------------------
+# Helpers — alerting and result tracking
+# -----------------------------------------------------------------------------
+
+# Write outcome to result file. Args: SUCCESS|FAILED [reason]
+write_result() {
+  local outcome="${1}"
+  local reason="${2:-}"
+  local ts
+  ts="$(date '+%Y-%m-%d %H:%M:%S')"
+  {
+    echo "OUTCOME=${outcome}"
+    echo "TIMESTAMP=${ts}"
+    echo "REASON=${reason}"
+  } > "${RESULT_FILE}"
+}
+
+# Fire ntfy.sh notification on upgrade failure. No-op if NTFY_TOPIC unset.
+notify_failure() {
+  local reason="${1:-unknown failure}"
+  # Load .env for NTFY_TOPIC if not already in environment
+  if [[ -z "${NTFY_TOPIC:-}" && -f "${ENV_FILE}" ]]; then
+    set +u
+    # shellcheck disable=SC1090
+    NTFY_TOPIC="$(source "${ENV_FILE}" 2>/dev/null; echo "${NTFY_TOPIC:-}")"
+    set -u
+  fi
+  [[ -z "${NTFY_TOPIC:-}" ]] && return 0
+  curl -s --max-time 10 \
+    -H "Title: MeshMonitor Upgrade Failed" \
+    -H "Priority: high" \
+    -H "Tags: warning" \
+    -d "Host: $(hostname) | $(date '+%Y-%m-%d %H:%M') | ${reason}" \
+    "https://ntfy.sh/${NTFY_TOPIC}" > /dev/null 2>&1 || true
+}
 
 # -----------------------------------------------------------------------------
 # Prune subcommand
 # -----------------------------------------------------------------------------
 if [[ "${1:-}" == "prune" ]]; then
-  UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
   echo
   echo "  ── MeshMonitor Pi — Docker Prune ─────────────────────"
   echo
@@ -74,17 +111,52 @@ if [[ "${1:-}" == "status" ]]; then
     echo "  URL     : http://${PI_IP}:${HOST_PORT}"
   fi
 
-  # Last upgrade
-  UPGRADE_LOG="${HOME}/meshmonitor-upgrade.log"
-  if [[ -f "$UPGRADE_LOG" ]]; then
-    LAST_DATE=$(stat -c '%y' "$UPGRADE_LOG" 2>/dev/null | cut -d. -f1 || echo "unknown")
-    # Look for pulled image digest or "up-to-date" confirmation
-    LAST_LINE=$(grep -E "(ghcr\.io|Status:|up-to-date|newer|pulled)" "$UPGRADE_LOG" 2>/dev/null | tail -1 || true)
-    echo "  Last upgrade : ${LAST_DATE}"
-    [[ -n "$LAST_LINE" ]] && echo "    ${LAST_LINE}"
+  # Last upgrade result
+  if [[ -f "$RESULT_FILE" ]]; then
+    set +u
+    # shellcheck disable=SC1090
+    source "$RESULT_FILE" 2>/dev/null || true
+    set -u
+    OUTCOME="${OUTCOME:-unknown}"
+    TIMESTAMP="${TIMESTAMP:-unknown}"
+    REASON="${REASON:-}"
+
+    # Calculate staleness
+    STALE_WARNING=""
+    if [[ "$TIMESTAMP" != "unknown" ]]; then
+      LAST_EPOCH=$(date -d "$TIMESTAMP" +%s 2>/dev/null || echo 0)
+      NOW_EPOCH=$(date +%s)
+      AGE_HOURS=$(( (NOW_EPOCH - LAST_EPOCH) / 3600 ))
+      AGE_DAYS=$(( AGE_HOURS / 24 ))
+      if [[ $AGE_HOURS -lt 24 ]]; then
+        AGE_STR="${AGE_HOURS}h ago"
+      else
+        AGE_STR="${AGE_DAYS}d ago"
+      fi
+      [[ $AGE_HOURS -gt 48 ]] && STALE_WARNING=" ── cron may not be running"
+    else
+      AGE_STR="unknown"
+    fi
+
+    if [[ "$OUTCOME" == "SUCCESS" ]]; then
+      echo "  Last upgrade : ✓ SUCCESS  (${AGE_STR})${STALE_WARNING}"
+    else
+      echo "  Last upgrade : ✗ FAILED   (${AGE_STR})${STALE_WARNING}"
+      [[ -n "$REASON" ]] && echo "    Reason: ${REASON}"
+    fi
   else
-    echo "  Last upgrade : no log found"
+    echo "  Last upgrade : no result recorded yet"
   fi
+
+  # ntfy alerting status
+  NTFY_STATUS="not configured"
+  if [[ -f "$ENV_FILE" ]]; then
+    set +u
+    _NTFY="$(source "${ENV_FILE}" 2>/dev/null; echo "${NTFY_TOPIC:-}")"
+    set -u
+    [[ -n "$_NTFY" ]] && NTFY_STATUS="configured"
+  fi
+  echo "  NTFY alerts  : ${NTFY_STATUS}"
   echo
 
   # Disk usage
@@ -238,10 +310,41 @@ if [[ $# -eq 0 ]]; then
   exit 1
 fi
 
-# Print summary once, then exec compose
+# Print summary once, then exec or run compose
 echo "  MeshMonitor Pi — launching stack"
 echo "  ─────────────────────────────────────────────────────"
 printf "%b" "$BRIDGE_SUMMARY"
 echo "  ─────────────────────────────────────────────────────"
+
+# pull and up -d get result tracking and failure alerting.
+# All other subcommands (down, etc.) pass straight through.
+if [[ "${1:-}" == "pull" ]]; then
+  set +e
+  "${COMPOSE_ARGS[@]}" --progress=tty pull
+  PULL_EXIT=$?
+  set -e
+  if [[ $PULL_EXIT -ne 0 ]]; then
+    write_result "FAILED" "docker compose pull exited ${PULL_EXIT}"
+    notify_failure "docker compose pull failed (exit ${PULL_EXIT})"
+    echo "[ERROR] docker compose pull failed (exit ${PULL_EXIT})" >&2
+    exit $PULL_EXIT
+  fi
+  exit 0
+fi
+
+if [[ "${1:-}" == "up" ]]; then
+  set +e
+  "${COMPOSE_ARGS[@]}" --progress=tty "$@"
+  UP_EXIT=$?
+  set -e
+  if [[ $UP_EXIT -ne 0 ]]; then
+    write_result "FAILED" "docker compose up exited ${UP_EXIT}"
+    notify_failure "docker compose up failed (exit ${UP_EXIT})"
+    echo "[ERROR] docker compose up failed (exit ${UP_EXIT})" >&2
+    exit $UP_EXIT
+  fi
+  write_result "SUCCESS"
+  exit 0
+fi
 
 exec "${COMPOSE_ARGS[@]}" --progress=tty "$@"

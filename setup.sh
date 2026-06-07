@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.5
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.6
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -100,7 +100,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.5"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.6"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo

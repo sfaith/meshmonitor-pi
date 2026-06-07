@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-06-07
+
+### Added
+- launch.sh: `write_result()` helper writes SUCCESS/FAILED + timestamp + reason
+  to ~/.meshmonitor-upgrade-result after every pull and up -d attempt
+- launch.sh: `notify_failure()` helper fires a push notification via ntfy.sh on
+  upgrade failure; no-op if NTFY_TOPIC is unset or WAN is down
+- launch.sh: `status` subcommand now shows last upgrade outcome (✓/✗), age with
+  staleness warning if >48h, and NTFY alert configuration status
+- env.example: NTFY_TOPIC documented with setup instructions
+- .gitignore: .meshmonitor-upgrade-result added (runtime file, Pi-local)
+
 ## [0.3.5] - 2026-06-07
 
 ### Added

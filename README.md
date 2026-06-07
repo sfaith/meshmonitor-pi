@@ -8,7 +8,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 ## Contents
 
 - [Quick Start](#quick-start)
-- [Hardware](#hardware)
+- [Installation](#installation)
 - [SD Card Write Minimization](#sd-card-write-minimization)
 - [Day-to-Day Operations](#day-to-day-operations)
 - [Adding More Nodes](#adding-more-nodes)
@@ -49,19 +49,21 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 ---
 
+## Installation
+
 > **New to Raspberry Pi?** You'll need to be comfortable with accessing your router's admin page and connecting to the Pi via SSH (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/) — Mac/Linux: Terminal). If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
 
 ### What you need
-- A Raspberry Pi — see [Hardware](#hardware) for board and SD card recommendations
+- A Raspberry Pi — see [Hardware](#hardware) below for board and SD card recommendations
 - A computer to write the SD card
 - Your Pi connected to your router via Ethernet or WiFi
 - At least one Meshtastic node — TCP is the simplest; BLE and serial also supported
 
 ---
 
-## Hardware
+### Hardware
 
-### Tested Configuration
+#### Tested Configuration
 
 | Component | Used |
 |---|---|
@@ -69,7 +71,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 | **SD card** | 32 GB Samsung Endurance Pro |
 | **OS** | Raspberry Pi OS Lite 64-bit (trixie) |
 
-### Supported Boards
+#### Supported Boards
 
 | Board | Architecture | Status |
 |---|---|---|
@@ -78,7 +80,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 | Pi 5 | arm64 | ✅ Should work — same architecture, faster |
 | Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
 
-### RAM
+#### RAM
 
 | RAM | Verdict |
 |---|---|
@@ -87,7 +89,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 | 4 GB | ✅ Tested |
 | 8 GB | ✅ No issues |
 
-### SD Card
+#### SD Card
 
 Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones rather than long-term continuous operation. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — the base install uses around 6 GB, but actual usage grows with mesh size and data retention settings.
 

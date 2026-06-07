@@ -1182,7 +1182,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable meshmonitor.service
 success "meshmonitor.service installed and enabled."
 
-# Auto-upgrade cron (always update to reflect current SCRIPT_DIR and time)
+# Auto-upgrade and weekly prune crons (always update to reflect current SCRIPT_DIR and time)
 CRON_MARKER="meshmonitor-pi auto-upgrade"
 PRUNE_MARKER="meshmonitor-pi weekly-prune"
 UPGRADE_HOUR=$(echo "${UPGRADE_TIME:-03:00}" | cut -d: -f1)

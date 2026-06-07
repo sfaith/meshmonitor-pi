@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-06-07
+
+### Added
+- launch.sh: `prune` subcommand — removes all unused Docker images, containers,
+  and networks via `docker system prune -af`; volumes never touched; output
+  logged to ~/meshmonitor-upgrade.log with timestamp header
+- setup.sh: weekly prune cron installed in step 7 (Sundays at 04:00, one hour
+  after nightly upgrade); uses its own cron marker so it doesn't collide with
+  the upgrade cron on re-runs
+- Motivated by 19 GB → 6.4 GB reclaim on production Pi — daily auto-upgrades
+  accumulate stale image layers without periodic pruning
+
 ## [0.3.4] - 2026-05-24
 
 ### Added

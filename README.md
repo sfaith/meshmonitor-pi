@@ -176,7 +176,8 @@ docker ps                               # Status (all containers)
 ./launch.sh down                        # Stop stack
 ./launch.sh pull && ./launch.sh up -d  # Manual upgrade
 ./launch.sh down && ./launch.sh up -d  # Restart stack
-cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade
+./launch.sh prune                       # Remove unused Docker images and containers
+cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade or prune
 ```
 
 Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`.

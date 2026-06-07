@@ -1187,7 +1187,7 @@ CRON_MARKER="meshmonitor-pi auto-upgrade"
 PRUNE_MARKER="meshmonitor-pi weekly-prune"
 UPGRADE_HOUR=$(echo "${UPGRADE_TIME:-03:00}" | cut -d: -f1)
 UPGRADE_MIN=$(echo "${UPGRADE_TIME:-03:00}"  | cut -d: -f2)
-CRON_LINE="${UPGRADE_MIN} ${UPGRADE_HOUR} * * * cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/launch.sh pull && ${SCRIPT_DIR}/launch.sh up -d >> ${UPGRADE_LOG} 2>&1 && tail -500 ${UPGRADE_LOG} > /tmp/mm-trim && mv /tmp/mm-trim ${UPGRADE_LOG} # ${CRON_MARKER}"
+CRON_LINE="${UPGRADE_MIN} ${UPGRADE_HOUR} * * * cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/launch.sh pull && ${SCRIPT_DIR}/launch.sh up -d 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' >> ${UPGRADE_LOG} && tail -500 ${UPGRADE_LOG} > /tmp/mm-trim && mv /tmp/mm-trim ${UPGRADE_LOG} # ${CRON_MARKER}"
 PRUNE_LINE="0 4 * * 0 cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/launch.sh prune >> ${UPGRADE_LOG} 2>&1 # ${PRUNE_MARKER}"
 
 EXISTING_CRON=$(crontab -l 2>/dev/null || true)

@@ -72,7 +72,7 @@ if [[ "${1:-}" == "prune" ]]; then
     echo "──────────────────────────────────────────────────────"
     echo "  Docker prune — $(date)"
     echo "──────────────────────────────────────────────────────"
-    docker system prune -af 2>&1
+    docker system prune -af 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
     echo
   } | tee -a "${UPGRADE_LOG}"
   echo "  ─────────────────────────────────────────────────────"

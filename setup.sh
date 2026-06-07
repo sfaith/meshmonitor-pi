@@ -165,6 +165,12 @@ fi
 
 echo
 echo "  Current settings (press Enter to accept each):"
+echo "  (Pi IP is your Pi's LAN address — used for the web UI URL and CORS config)"
+# Auto-detect Pi's primary LAN IP as default if not already set
+if [[ -z "${PI_IP:-}" ]] || [[ "${PI_IP}" == "YOUR_PI_IP_HERE" ]]; then
+  DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+  [[ -n "$DETECTED_IP" ]] && PI_IP="$DETECTED_IP"
+fi
 prompt PI_IP         "Pi IP address      " "${PI_IP:-}" "192.168.1.40"
 [[ -z "${PI_IP:-}" ]] && error "Pi IP address is required."
 prompt HOST_PORT     "MeshMonitor port   " "${HOST_PORT:-8080}"

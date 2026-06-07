@@ -38,7 +38,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    ./setup.sh
    ```
    > If Docker wasn't pre-installed, setup.sh will install it and relaunch itself automatically. Just follow the prompts — it picks up where it left off.
-5. Reboot to apply SD card optimizations:
+5. Reboot to apply SD card and storage optimizations:
    ```bash
    sudo reboot
    ```
@@ -104,13 +104,13 @@ cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh
 
 The wizard hardens the OS, installs Docker, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
 
-**5. Reboot to apply OS hardening**
+**5. Reboot to apply SD card and storage optimizations**
 
 ```bash
 sudo reboot
 ```
 
-This applies the SD card optimizations (`noatime`, tmpfs `/var/log`) configured during setup. The stack restarts automatically — no manual action needed.
+This applies `noatime`, tmpfs mounts, and journal configuration to minimize SD card writes. The stack restarts automatically — no manual action needed.
 
 **6. Verify and open the web UI**
 
@@ -219,6 +219,7 @@ Topic    : msh/US/2/e/LongFast/#   (adjust region — see docs)
 Username : meshdev
 Password : large4cats
 ```
+> The exact topic structure depends on your firmware version and region. The [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations/mqtt/) are the authoritative source.
 
 For regional brokers, check your local mesh community. Example (Arizona mesh):
 ```
@@ -243,7 +244,7 @@ docker logs meshmonitor-serial-1
 Common causes:
 - Wrong device path — run `ls /dev/ttyACM* /dev/ttyUSB*` to find the correct device
 - Serial mode not enabled on the device — see [Adding More Nodes](#adding-more-nodes) for the config commands
-- Permission denied — add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
+- Permission denied — the Docker bridge accesses the device via the `devices:` mapping in the compose file, so host group membership isn't required. If you're accessing the device directly outside Docker, add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
 - Device reboot on connect — normal; the bridge disables HUPCL automatically on startup
 
 **BLE source stuck on 'connecting'**
@@ -310,3 +311,4 @@ This shows container health, MeshMonitor version, last upgrade outcome, NTFY ale
 - [MeshMonitor GitHub](https://github.com/yeraze/meshmonitor)
 - [MeshMonitor Discord](https://discord.gg/JVR3VBETQE)
 - [Meshtastic](https://meshtastic.org/)
+- [Meshtastic MQTT Documentation](https://meshtastic.org/docs/software/integrations/mqtt/)

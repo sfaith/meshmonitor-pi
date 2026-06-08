@@ -138,6 +138,7 @@ Wait for the Pi to reboot, then SSH back in. This ensures all OS updates are app
 **4. Install dependencies and run setup**
 
 ```bash
+cd ~
 sudo apt install -y git curl openssl bluez
 git clone https://github.com/sfaith/meshmonitor-pi.git && cd meshmonitor-pi
 chmod +x setup.sh launch.sh scan-ble.sh

@@ -63,7 +63,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 ### Hardware
 
-#### Tested Configuration
+#### Tested Configurations
 
 | Component | Used |
 |---|---|

@@ -276,7 +276,7 @@ nc -zv YOUR_NODE_IP 4403
 ```
 > If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
-**UI broke after overnight upgrade** — check the log, then the upstream CHANGELOG:
+**UI broke after overnight upgrade** — check the logs first, then the upstream CHANGELOG for any breaking changes introduced by the new version:
 ```bash
 cat ~/meshmonitor-upgrade.log
 docker logs meshmonitor

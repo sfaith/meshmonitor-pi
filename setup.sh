@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — MeshMonitor Pi Setup Wizard v0.3.6
+# setup.sh — MeshMonitor Pi Setup Wizard v0.3.7
 # =============================================================================
 #
 # Interactive 8-step configuration wizard. Run this on first install and
@@ -98,7 +98,7 @@ is_first_run() {
 # -----------------------------------------------------------------------------
 echo
 echo "============================================================"
-echo "  MeshMonitor Pi — Setup Wizard v0.3.6"
+echo "  MeshMonitor Pi — Setup Wizard v0.3.7"
 echo "  github.com/sfaith/meshmonitor-pi"
 echo "============================================================"
 echo
@@ -164,6 +164,7 @@ fi
 echo
 echo "  Current settings (press Enter to accept each):"
 echo "  (Pi IP is your Pi's LAN address — used for the web UI URL and CORS config)"
+echo
 # Auto-detect Pi's primary LAN IP as default if not already set
 if [[ -z "${PI_IP:-}" ]] || [[ "${PI_IP}" == "YOUR_PI_IP_HERE" ]]; then
   DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}')

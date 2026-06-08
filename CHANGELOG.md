@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-06-07
+
+### Fixed
+- setup.sh: replace `newgrp` heredoc relaunch with `sg docker` for proper
+  interactive terminal after Docker install — previous approach dropped the
+  user back to the shell
+- setup.sh: comment out example node vars in env.example to prevent bash
+  sourcing errors on first run (`NODE_1_NAME=My Meshtastic Node` was being
+  executed as a command)
+- setup.sh: auto-detect Pi's primary LAN IP as default in step 1 instead of
+  showing placeholder `YOUR_PI_IP_HERE`
+- setup.sh: add blank line spacing in step 1 prompts for consistent display
+  on both first run and resume after Docker install
+
+### Added
+- setup.sh: reboot menu prompt at end of first-run setup — offers to reboot
+  immediately with 5-second countdown, or skip with reminder
+
 ## [0.3.6] - 2026-06-07
 
 ### Added

@@ -150,15 +150,12 @@ This applies `noatime`, tmpfs mounts, and journal configuration to minimize SD c
 
 **6. Verify and open the web UI**
 
-```bash
-./launch.sh status   # shows health, version, last upgrade, disk, uptime
-```
+Open `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`. **Change the password immediately.**
 
-> The container may take a few minutes to report healthy — this is normal on first boot or after an upgrade.
-
-Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the password immediately**.
-
-> `setup.sh` is safe to re-run at any time. To supply your own session secret, run `openssl rand -hex 32`, set `SESSION_SECRET=<output>` in `.env`, then run setup.
+> The container may take a few minutes to report healthy on first boot — if the page doesn't load right away, wait a minute and try again. To check status from the command line:
+> ```bash
+> ./launch.sh status
+> ```
 
 ---
 

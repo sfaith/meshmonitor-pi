@@ -151,10 +151,10 @@ This applies `noatime`, tmpfs mounts, and journal configuration to minimize SD c
 **6. Verify and open the web UI**
 
 ```bash
-docker ps   # meshmonitor should show healthy
+./launch.sh status   # shows health, version, last upgrade, disk, uptime
 ```
 
-> The container may take a few minutes to start and report healthy — this is normal on first boot or after an upgrade.
+> The container may take a few minutes to report healthy — this is normal on first boot or after an upgrade.
 
 Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the password immediately**.
 
@@ -164,7 +164,7 @@ Open `http://<PI_IP>:8080`, log in with `admin` / `changeme`, and **change the p
 
 ## SD Card Write Minimization
 
-Five layers keep writes off the card: Docker log caps, `ACCESS_LOG_ENABLED=false`, tmpfs for MeshMonitor logs, and SD card optimizations (`noatime`, volatile journal, tmpfs `/var/log`) — all applied automatically by `setup.sh`. The only necessary writes are the SQLite database and Docker image layers during upgrades.
+SD cards wear out faster when written to constantly. This project applies five layers of protection to keep writes to a minimum: Docker log size caps, `ACCESS_LOG_ENABLED=false` to suppress HTTP access logging, a tmpfs (RAM disk) for MeshMonitor's own log files, and OS-level optimizations — `noatime` (stops recording file access timestamps), a volatile systemd journal (logs go to RAM instead of the card), and tmpfs for `/var/log`. All of this is applied automatically by `setup.sh`. The only writes that actually hit the card are the SQLite database and Docker image layers during upgrades.
 
 ---
 
@@ -189,6 +189,8 @@ Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in 
 ### Upgrade Failure Alerts
 
 Set `NTFY_TOPIC` in `.env` to receive a push notification if the nightly upgrade fails. Pick any unique string as your topic name (treat it like a password), install the [ntfy app](https://ntfy.sh) on your phone, and subscribe to your topic. No account required. If `NTFY_TOPIC` is unset, alerting is silently disabled.
+
+Full setup instructions are in `env.example` alongside the `NTFY_TOPIC` entry.
 
 The last upgrade outcome is always visible in `./launch.sh status` regardless of alert configuration.
 
@@ -272,6 +274,7 @@ Power cycle the device first if pairing is rejected.
 ping YOUR_NODE_IP
 nc -zv YOUR_NODE_IP 4403
 ```
+> If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
 **UI broke after overnight upgrade** — check the log, then the upstream CHANGELOG:
 ```bash

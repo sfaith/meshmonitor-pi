@@ -281,7 +281,7 @@ nc -zv YOUR_NODE_IP 4403
 cat ~/meshmonitor-upgrade.log
 docker logs meshmonitor
 ```
-To disable auto-upgrade temporarily: `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to restore.
+To disable auto-upgrade temporarily: edit the crontab with `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` or edit the crontab again to restore.
 
 **Reset MeshMonitor data**
 

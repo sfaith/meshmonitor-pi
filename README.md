@@ -284,6 +284,9 @@ docker logs meshmonitor
 To disable auto-upgrade temporarily: `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` to restore.
 
 **Reset MeshMonitor data**
+
+> ⚠️ **This is destructive and irreversible.** All node history, telemetry, messages, and configuration stored by MeshMonitor will be permanently deleted. The application will start fresh as if newly installed.
+
 ```bash
 ./launch.sh down
 docker volume rm meshmonitor-pi_meshmonitor-data

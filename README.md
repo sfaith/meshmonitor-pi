@@ -254,7 +254,7 @@ See the [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations
 
 ## Troubleshooting
 
-**Serial source not connecting**
+**🔌 Serial source not connecting**
 
 Check the bridge container logs first, using the correct container name for your serial node (`meshmonitor-serial-1`, `meshmonitor-serial-2`, etc. — run `docker ps` to confirm):
 ```bash
@@ -266,7 +266,7 @@ Common causes:
 - Permission denied — the Docker bridge accesses the device via the `devices:` mapping in the compose file, so host group membership isn't required. If you're accessing the device directly outside Docker, add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
 - Device reboot on connect — normal; the bridge disables HUPCL automatically on startup
 
-**BLE source stuck on 'connecting'**
+**📶 BLE source stuck on 'connecting'**
 
 Your device likely requires Bluetooth pairing before it will exchange data with the bridge. This affects PIN/passkey-protected devices. Re-run `./setup.sh`, select your BLE node, and choose to pair when prompted.
 
@@ -282,23 +282,23 @@ docker start meshmonitor-ble-1
 ```
 Power cycle the device first if pairing is rejected.
 
-**Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port. Edit with `nano .env` from the `meshmonitor-pi` directory.
+**⬜ Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port. Edit with `nano .env` from the `meshmonitor-pi` directory.
 
-**Node not connecting**
+**📡 Node not connecting**
 ```bash
 ping YOUR_NODE_IP
 nc -zv YOUR_NODE_IP 4403
 ```
 > If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
-**UI broke after overnight upgrade** — check the logs first, then the upstream [CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for any breaking changes introduced by the new version:
+**🔄 UI broke after overnight upgrade** — check the logs first, then the upstream [CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for any breaking changes introduced by the new version:
 ```bash
 cat ~/.meshmonitor-upgrade-result
 docker logs meshmonitor
 ```
 To disable auto-upgrade temporarily: edit the crontab with `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` or edit the crontab again to restore.
 
-**Reset MeshMonitor data**
+**⚠️ Reset MeshMonitor data**
 
 > ⚠️ **This is destructive and irreversible.** All node history, telemetry, messages, and configuration stored by MeshMonitor will be permanently deleted. The application will start fresh as if newly installed.
 

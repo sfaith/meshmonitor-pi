@@ -1,5 +1,5 @@
 # meshmonitor-pi
-![Version](https://img.shields.io/badge/version-0.3.7-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
+![Version](https://img.shields.io/badge/version-0.3.8-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
 A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
 
@@ -24,7 +24,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 <details>
 <summary>⚡ Quick install — expand if you know your way around a Pi</summary>
 
-1. Flash **Raspberry Pi OS Lite** (64-bit for Pi 4/5, 32-bit for Pi 3B/3B+) via Raspberry Pi Imager with SSH and password authentication enabled
+1. Flash **Raspberry Pi OS Lite** (64-bit) via Raspberry Pi Imager with SSH and password authentication enabled
 2. Reserve a static DHCP IP for your Pi in your router
 3. SSH in, update OS and reboot:
    ```bash
@@ -67,17 +67,17 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 | Component | Used |
 |---|---|
-| **Board** | Raspberry Pi 4 (4 GB RAM) |
+| **Board** | Raspberry Pi 4 (4 GB RAM), Raspberry Pi 5 (8 GB RAM), Raspberry Pi 3B+ (1 GB RAM) |
 | **SD card** | 32 GB Samsung Endurance Pro |
-| **OS** | Raspberry Pi OS Lite 64-bit (trixie) |
+| **OS** | Raspberry Pi OS Lite 64-bit (Trixie) |
 
 #### Supported Boards
 
 | Board | Architecture | Status |
 |---|---|---|
-| Pi 3B / 3B+ | armv7 (32-bit) | ⚠️ Untested — armv7 image exists; MeshMonitor dev runs this setup |
+| Pi 3B / 3B+ | arm64 (64-bit) | ✅ Tested — 1 GB RAM adequate for light use |
 | Pi 4 (any RAM) | arm64 | ✅ Tested |
-| Pi 5 | arm64 | ✅ Should work — same architecture, faster |
+| Pi 5 | arm64 | ✅ Tested |
 | Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
 
 #### RAM
@@ -103,7 +103,7 @@ Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/softw
 
 1. Click **Choose Device** → select your Pi model
 2. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite**
-   - Pi 4 or 5: **64-bit** — Pi 3B/3B+: **32-bit**
+   - Pi 3B/3B+ or newer: **64-bit**
 3. Click **Choose Storage** → select your SD card
 4. Click **Next** → **Edit Settings**:
    - Set a hostname (e.g. `meshmonitor`), username, and password

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2026-06-07
+
+### Fixed
+- setup.sh: corrected `[WARN]` message after Docker install to say `sg docker`
+  (was `newgrp docker` — cosmetic mismatch with actual mechanism)
+- setup.sh: added missing blank line after `[OK] Session secret generated
+  automatically.` — gap was noticeable on slower hardware where output pauses
+- launch.sh: fixed double separator lines in step 8 output when no bridge nodes
+  are configured — second `─────` line now only printed if bridge summary is
+  non-empty
+
 ## [0.3.7] - 2026-06-07
 
 ### Fixed

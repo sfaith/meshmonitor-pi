@@ -194,6 +194,7 @@ if [[ -z "${SESSION_SECRET:-}" ]] || [[ "${SESSION_SECRET}" == *"REPLACE_WITH"* 
 else
   success "Session secret already configured — keeping existing value."
 fi
+echo
 
 ALLOWED_ORIGINS="http://${PI_IP}:${HOST_PORT}"
 echo
@@ -217,7 +218,7 @@ else
   curl -fsSL https://get.docker.com | sudo sh
   sudo usermod -aG docker "${USER}"
   success "Docker installed."
-  warn "Relaunching under 'newgrp docker' to continue..."
+  warn "Relaunching under 'sg docker' to continue..."
   # Preserve step 1 values across the relaunch — sourced on resume at top of script.
   {
     printf 'PI_IP=%q\n'         "${PI_IP:-}"

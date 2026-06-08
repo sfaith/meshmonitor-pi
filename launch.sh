@@ -313,8 +313,10 @@ fi
 # Print summary once, then exec or run compose
 echo "  MeshMonitor Pi — launching stack"
 echo "  ─────────────────────────────────────────────────────"
-printf "%b" "$BRIDGE_SUMMARY"
-echo "  ─────────────────────────────────────────────────────"
+if [[ -n "$BRIDGE_SUMMARY" ]]; then
+  printf "%b" "$BRIDGE_SUMMARY"
+  echo "  ─────────────────────────────────────────────────────"
+fi
 
 # pull and up -d get result tracking and failure alerting.
 # All other subcommands (down, etc.) pass straight through.

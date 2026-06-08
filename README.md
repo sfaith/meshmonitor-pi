@@ -103,7 +103,7 @@ Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/softw
 
 1. Click **Choose Device** → select your Pi model
 2. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS Lite**
-   - Pi 3B/3B+ or newer: **64-bit**
+   > Pi 3B/3B+ or newer: select the 64-bit image
 3. Click **Choose Storage** → select your SD card
 4. Click **Next** → **Edit Settings**:
    - Set a hostname (e.g. `meshmonitor`), username, and password
@@ -274,7 +274,7 @@ docker start meshmonitor-ble-1
 ```
 Power cycle the device first if pairing is rejected.
 
-**Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port.
+**Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port. Edit with `nano .env` from the `meshmonitor-pi` directory.
 
 **Node not connecting**
 ```bash
@@ -285,7 +285,7 @@ nc -zv YOUR_NODE_IP 4403
 
 **UI broke after overnight upgrade** — check the logs first, then the upstream CHANGELOG for any breaking changes introduced by the new version:
 ```bash
-cat ~/meshmonitor-upgrade.log
+cat ~/.meshmonitor-upgrade-result
 docker logs meshmonitor
 ```
 To disable auto-upgrade temporarily: edit the crontab with `crontab -e` and comment out the `meshmonitor-pi auto-upgrade` line. Re-run `./setup.sh` or edit the crontab again to restore.
@@ -304,7 +304,7 @@ docker volume rm meshmonitor-pi_meshmonitor-data
 
 ## Maintenance
 
-Check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) periodically — env var changes or new required variables can occasionally require a config update.
+**Stay current** — check the [MeshMonitor CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) periodically — env var changes or new required variables can occasionally require a config update.
 
 **Disk space** — Docker accumulates stale image layers over time from daily auto-upgrades. A weekly prune cron is installed automatically by `setup.sh`. To reclaim space manually:
 ```bash

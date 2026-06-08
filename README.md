@@ -181,7 +181,10 @@ docker ps                               # Status (all containers)
 cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade or prune
 ```
 
-Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`.
+Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`. To customize further, edit the crontab directly:
+```bash
+crontab -e
+```
 
 ### Upgrade Failure Alerts
 

@@ -75,16 +75,17 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
 
 | Board | Architecture | Status |
 |---|---|---|
-| Pi 3B / 3B+ | arm64 (64-bit) | ✅ Tested — 1 GB RAM adequate for light use |
-| Pi 4 (any RAM) | arm64 | ✅ Tested |
-| Pi 5 | arm64 | ✅ Tested |
+| Pi 3B / 3B+ | arm64 (64-bit) | ✅ Tested (Pi 3B+) — 1 GB RAM marginal; suitable for small meshes only |
+| Pi 4 (any RAM) | arm64 | ✅ Tested (Pi 4 4GB) — 2 GB+ recommended for larger meshes |
+| Pi 5 | arm64 | ✅ Tested (Pi 5 8GB) |
 | Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
 
 #### RAM
 
 | RAM | Verdict |
 |---|---|
-| 1 GB | ⚠️ Tight |
+| 512 MB | ❌ Not recommended |
+| 1 GB | ⚠️ Marginal — small meshes only |
 | 2 GB | ✅ Comfortable |
 | 4 GB | ✅ Tested |
 | 8 GB | ✅ No issues |

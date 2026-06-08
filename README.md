@@ -42,7 +42,7 @@ A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi 
    ```bash
    sudo reboot
    ```
-6. Verify: `docker ps` — meshmonitor should show healthy (may take a few minutes on first boot)
+6. Verify: `./launch.sh status` — meshmonitor should show healthy (may take a few minutes on first boot)
 7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>
@@ -133,10 +133,15 @@ Wait for the Pi to reboot, then SSH back in. This ensures all OS updates are app
 
 ```bash
 sudo apt install -y git curl openssl bluez
-git clone https://github.com/sfaith/meshmonitor-pi.git
-cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh
+git clone https://github.com/sfaith/meshmonitor-pi.git && cd meshmonitor-pi
+chmod +x setup.sh launch.sh scan-ble.sh
 ./setup.sh
 ```
+
+> If the clone fails, common causes:
+> - `Could not resolve host: github.com` — no internet connection. Check your network and try again.
+> - `Permission denied (publickey)` — you're using SSH instead of HTTPS. The command above uses HTTPS and should not require a GitHub account.
+> - `destination path already exists` — a previous clone attempt left a partial directory. Run `rm -rf meshmonitor-pi` and try again.
 
 The wizard installs Docker, applies SD card and storage optimizations, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
 
@@ -178,7 +183,7 @@ docker ps                               # Status (all containers)
 ./launch.sh pull && ./launch.sh up -d  # Manual upgrade
 ./launch.sh down && ./launch.sh up -d  # Restart stack
 ./launch.sh prune                       # Remove unused Docker images and containers
-cat ~/meshmonitor-upgrade.log           # Check last auto-upgrade or prune
+cat ~/.meshmonitor-upgrade-result       # Check last auto-upgrade outcome
 ```
 
 Auto-upgrade runs daily at 3 AM. To change the schedule, edit `UPGRADE_TIME` in `.env` and re-run `./setup.sh`. To customize further, edit the crontab directly:
@@ -210,6 +215,8 @@ meshtastic --set serial.mode SIMPLE
 meshtastic --set serial.baud BAUD_115200
 ```
 
+> These commands require the [Meshtastic CLI](https://meshtastic.org/docs/software/python/cli/) installed on a separate computer. Alternatively, configure serial mode via the **Meshtastic app** on [Android](https://meshtastic.org/docs/software/android/) or [iOS](https://meshtastic.org/docs/software/apple/) under **Radio Configuration → Module Config → Serial**.
+
 ---
 
 ## MQTT Integration
@@ -219,7 +226,7 @@ meshtastic --set serial.baud BAUD_115200
 For the official Meshtastic public broker:
 ```
 Broker   : mqtt.meshtastic.org
-Topic    : msh/US/2/e/LongFast/#   (adjust region — see docs)
+Topic    : msh/US/2/e/LongFast/#   (firmware-dependent — verify in the docs before using)
 Username : meshdev
 Password : large4cats
 ```
@@ -265,6 +272,8 @@ trust <YOUR_DEVICE_MAC>
 exit
 docker start meshmonitor-ble-1
 ```
+> Replace `meshmonitor-ble-1` with the correct container name for your node if you have multiple BLE nodes (e.g. `meshmonitor-ble-2`). Run `docker ps` to see all running container names.
+
 Power cycle the device first if pairing is rejected.
 
 **Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port.

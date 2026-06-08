@@ -95,6 +95,12 @@ Use an **endurance-rated** card designed for 24/7 write workloads — look for "
 
 ---
 
+### Step-by-Step Installation
+
+New to Raspberry Pi or just want the full walkthrough? The steps below cover everything from flashing the SD card to a running MeshMonitor instance.
+
+---
+
 ### Phase 1 — Get the Pi ready
 
 **1. Write the SD card**

@@ -248,7 +248,7 @@ See the [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations
 
 **Serial source not connecting**
 
-Check the bridge container logs first:
+Check the bridge container logs first, using the correct container name for your serial node (`meshmonitor-serial-1`, `meshmonitor-serial-2`, etc. — run `docker ps` to confirm):
 ```bash
 docker logs meshmonitor-serial-1
 ```

@@ -290,7 +290,7 @@ nc -zv YOUR_NODE_IP 4403
 ```
 > If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
-**UI broke after overnight upgrade** — check the logs first, then the upstream CHANGELOG for any breaking changes introduced by the new version:
+**UI broke after overnight upgrade** — check the logs first, then the upstream [CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for any breaking changes introduced by the new version:
 ```bash
 cat ~/.meshmonitor-upgrade-result
 docker logs meshmonitor

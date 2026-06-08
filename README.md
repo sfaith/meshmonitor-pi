@@ -262,7 +262,7 @@ Common causes:
 
 Your device likely requires Bluetooth pairing before it will exchange data with the bridge. This affects PIN/passkey-protected devices. Re-run `./setup.sh`, select your BLE node, and choose to pair when prompted.
 
-If you need to pair manually:
+If you need to pair manually, first confirm your BLE container name with `docker ps` (it will be `meshmonitor-ble-1`, `meshmonitor-ble-2`, etc. depending on how many BLE nodes you have), then:
 ```bash
 docker stop meshmonitor-ble-1
 bluetoothctl
@@ -272,8 +272,6 @@ trust <YOUR_DEVICE_MAC>
 exit
 docker start meshmonitor-ble-1
 ```
-> Replace `meshmonitor-ble-1` with the correct container name for your node if you have multiple BLE nodes (e.g. `meshmonitor-ble-2`). Run `docker ps` to see all running container names.
-
 Power cycle the device first if pairing is rejected.
 
 **Blank white screen** — check `ALLOWED_ORIGINS` in `.env` matches your URL exactly including port.

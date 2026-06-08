@@ -291,6 +291,8 @@ nc -zv YOUR_NODE_IP 4403
 ```
 > If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
+If `ping` fails, the Pi can't reach the node at all — check that the node is powered on and connected to your network. If `ping` succeeds but the port check fails, the node is reachable but not accepting connections on port 4403 — verify the TCP server is enabled and the correct port is configured in your node's settings. Refer to your node's documentation for configuration details.
+
 **🔄 UI broke after overnight upgrade** — check the logs first, then the upstream [CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for any breaking changes introduced by the new version:
 ```bash
 cat ~/.meshmonitor-upgrade-result

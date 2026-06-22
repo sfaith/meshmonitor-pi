@@ -1,7 +1,7 @@
 # meshmonitor-pi
 ![Version](https://img.shields.io/badge/version-0.3.8-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
-A Docker deployment of [MeshMonitor](https://meshmonitor.org/) for Raspberry Pi — optimized for SD card longevity and hands-off operation.
+Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmonitor.org/) instance. Starting from a fresh Raspberry Pi OS Lite install, a single setup wizard handles Docker installation, node configuration, SD card write protection, systemd boot service, automatic daily upgrades with push failure alerts, and weekly maintenance — everything you'd otherwise piece together yourself.
 
 ---
 

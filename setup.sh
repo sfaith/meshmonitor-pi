@@ -1388,6 +1388,9 @@ EOF
 print_notes() {
   cat <<EOF
 
+  Web UI: http://${PI_IP}:${HOST_PORT}
+  MeshMonitor may take a minute or two to start on first boot.
+
   ── TROUBLESHOOTING ───────────────────────────────────
 
   BLE bridge not connecting?

@@ -95,7 +95,7 @@ Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmoni
 
 #### SD Card
 
-Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones rather than long-term continuous operation. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — the base install uses around 6 GB, but actual usage grows with mesh size and data retention settings.
+Use an **endurance-rated** card designed for 24/7 write workloads — look for "High Endurance" or "Endurance Pro" in the product name. Standard cards, even name brands, are optimized for cameras and phones rather than long-term continuous operation. **Tested with:** Samsung Endurance Pro (recommended). 32 GB is the sweet spot — actual usage varies significantly with mesh size and data retention settings, but 32 GB provides comfortable headroom for virtually any deployment.
 
 ---
 

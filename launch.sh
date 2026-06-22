@@ -331,6 +331,7 @@ if [[ "${1:-}" == "pull" ]]; then
     echo "[ERROR] docker compose pull failed (exit ${PULL_EXIT})" >&2
     exit $PULL_EXIT
   fi
+  write_result "SUCCESS"
   exit 0
 fi
 

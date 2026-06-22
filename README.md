@@ -42,7 +42,10 @@ Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmoni
    ```bash
    sudo reboot
    ```
-6. Verify: `./launch.sh status` — meshmonitor should show healthy (may take a few minutes on first boot)
+6. Verify — meshmonitor should show healthy (may take a few minutes on first boot):
+   ```bash
+   ./launch.sh status
+   ```
 7. Open `http://<PI_IP>:8080`, change the default password (`admin` / `changeme`)
 
 </details>

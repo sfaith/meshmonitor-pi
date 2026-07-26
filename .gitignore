@@ -11,6 +11,9 @@ docker-compose.generated.yml
 CLAUDE.md
 NewChatPrompt.md
 
+# Local test logs — not for public repo
+INSTALL-TEST.md
+
 # macOS / editor noise
 .DS_Store
 *.swp

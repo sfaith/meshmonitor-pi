@@ -1,7 +1,14 @@
 # meshmonitor-pi
 ![Version](https://img.shields.io/badge/version-0.3.8-blue) ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-lightgrey) ![License](https://img.shields.io/badge/license-BSD--3--Clause-green)
 
-Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmonitor.org/) instance. Starting from a fresh Raspberry Pi OS Lite install, a single setup wizard handles Docker installation, node configuration, SD card write protection, systemd boot service, automatic daily upgrades with push failure alerts, and weekly maintenance — everything you'd otherwise piece together yourself.
+Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmonitor.org/) instance. Starting from a fresh Raspberry Pi OS Lite install, a single setup wizard handles everything you'd otherwise piece together yourself:
+
+- Docker installation
+- Node configuration
+- SD card write protection
+- systemd boot service
+- Automatic daily upgrades with push failure alerts
+- Weekly maintenance
 
 ---
 
@@ -37,7 +44,7 @@ Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmoni
    cd meshmonitor-pi && chmod +x setup.sh launch.sh scan-ble.sh && \
    ./setup.sh
    ```
-   > If Docker wasn't pre-installed, setup.sh will install it and relaunch itself automatically. Just follow the prompts — it picks up where it left off.
+   > If Docker wasn't pre-installed, setup.sh will install it and relaunch itself automatically. Follow the prompts — it picks up where it left off.
 5. Reboot to apply SD card and storage optimizations:
    ```bash
    sudo reboot
@@ -54,7 +61,7 @@ Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmoni
 
 ## Installation
 
-> **New to Raspberry Pi?** You'll need to be comfortable with accessing your router's admin page and connecting to the Pi via SSH (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/) — Mac/Linux: Terminal). If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
+> **New to Raspberry Pi?** You'll need to be comfortable with accessing your router's admin page and connecting to the Pi via SSH (Windows: [Windows Terminal](https://aka.ms/terminal) or [PuTTY](https://www.putty.org/); Mac/Linux: Terminal). If any of that sounds unfamiliar, the [Raspberry Pi Getting Started guide](https://www.raspberrypi.com/documentation/computers/getting-started.html) is an excellent place to begin.
 
 ### What you need
 - A Raspberry Pi — see [Hardware](#hardware) below for board and SD card recommendations
@@ -78,17 +85,17 @@ Turn a spare Raspberry Pi into a self-maintaining [MeshMonitor](https://meshmoni
 
 | Board | Architecture | Status |
 |---|---|---|
-| Pi 3B / 3B+ | arm64 (64-bit) | ✅ Tested (Pi 3B+) — 1 GB RAM marginal; suitable for small meshes only |
-| Pi 4 (any RAM) | arm64 | ✅ Tested (Pi 4 4GB) — 2 GB+ recommended for larger meshes |
+| Pi 3B / 3B+ | arm64 (64-bit) | ✅ Tested (Pi 3B+): 1 GB RAM marginal; suitable for small meshes only |
+| Pi 4 (any RAM) | arm64 | ✅ Tested (Pi 4 4GB): 2 GB+ recommended for larger meshes |
 | Pi 5 | arm64 | ✅ Tested (Pi 5 8GB) |
-| Pi Zero 2W | arm64 | ⚠️ Untested — 512 MB RAM is very tight |
+| Pi Zero 2W | arm64 | ⚠️ Untested: 512 MB RAM is very tight |
 
 #### RAM
 
 | RAM | Verdict |
 |---|---|
 | 512 MB | ❌ Not recommended |
-| 1 GB | ⚠️ Marginal — small meshes only |
+| 1 GB | ⚠️ Marginal: small meshes only |
 | 2 GB | ✅ Comfortable |
 | 4 GB | ✅ Tested |
 | 8 GB | ✅ No issues |
@@ -116,7 +123,7 @@ Download and install the [Raspberry Pi Imager](https://www.raspberrypi.com/softw
    > Pi 3B/3B+ or newer: select the 64-bit image
 3. Click **Choose Storage** → select your SD card
 4. Click **Next** → **Edit Settings**:
-   - Set a hostname (e.g. `meshmonitor`), username, and password
+   - Set a hostname (for example, `meshmonitor`), username, and password
    - Configure WiFi if not using Ethernet
    - On the **Services** tab: **Enable SSH** → **Use password authentication**
    - Advanced users may prefer key-based authentication — the wizard supports either
@@ -150,9 +157,9 @@ chmod +x setup.sh launch.sh scan-ble.sh
 ```
 
 > If the clone fails, common causes:
-> - `Could not resolve host: github.com` — no internet connection. Check your network and try again.
-> - `Permission denied (publickey)` — you're using SSH instead of HTTPS. The command above uses HTTPS and should not require a GitHub account.
-> - `destination path already exists` — a previous clone attempt left a partial directory. Run `rm -rf meshmonitor-pi` and try again.
+> - `Could not resolve host: github.com`: no internet connection. Check your network and try again.
+> - `Permission denied (publickey)`: you're using SSH instead of HTTPS. The command above uses HTTPS and should not require a GitHub account.
+> - `destination path already exists`: a previous clone attempt left a partial directory. Run `rm -rf meshmonitor-pi` and try again.
 
 The wizard installs Docker, applies SD card and storage optimizations, configures your nodes, and starts the stack. By the time it completes, MeshMonitor is running.
 
@@ -177,13 +184,23 @@ Open `http://<PI_IP>:8080` in your browser and log in with `admin` / `changeme`.
 
 ## SD Card Write Minimization
 
-SD cards wear out faster when written to constantly. This project applies five layers of protection to keep writes to a minimum: Docker log size caps, `ACCESS_LOG_ENABLED=false` to suppress HTTP access logging, a tmpfs (RAM disk) for MeshMonitor's own log files, and OS-level optimizations — `noatime` (stops recording file access timestamps), a volatile systemd journal (logs go to RAM instead of the card), and tmpfs for `/var/log`. All of this is applied automatically by `setup.sh`. The only writes that actually hit the card are the SQLite database and Docker image layers during upgrades.
+SD cards wear out faster when written to constantly. This project applies five layers of protection to keep writes to a minimum:
+
+- Docker log size caps
+- `ACCESS_LOG_ENABLED=false` to suppress HTTP access logging
+- A tmpfs (RAM disk) for MeshMonitor's own log files
+- OS-level optimizations:
+  - `noatime` (stops recording file access timestamps)
+  - A volatile systemd journal (logs go to RAM instead of the card)
+  - tmpfs for `/var/log`
+
+All of this is applied automatically by `setup.sh`. The only writes that hit the card are the SQLite database and Docker image layers during upgrades.
 
 ---
 
 ## Day-to-Day Operations
 
-> For most changes — adding nodes, updating settings — just re-run `./setup.sh`.
+> For most changes — adding nodes, updating settings — re-run `./setup.sh`.
 
 ```bash
 docker logs -f meshmonitor              # Live logs
@@ -259,21 +276,21 @@ See the [Meshtastic MQTT docs](https://meshtastic.org/docs/software/integrations
 
 **🔌 Serial source not connecting**
 
-Check the bridge container logs first, using the correct container name for your serial node (`meshmonitor-serial-1`, `meshmonitor-serial-2`, etc. — run `docker ps` to confirm):
+Check the bridge container logs first, using the correct container name for your serial node (`meshmonitor-serial-1`, `meshmonitor-serial-2`, and so on — run `docker ps` to confirm):
 ```bash
 docker logs meshmonitor-serial-1
 ```
 Common causes:
-- Wrong device path — run `ls /dev/ttyACM* /dev/ttyUSB*` to find the correct device
-- Serial mode not enabled on the device — see [Adding More Nodes](#adding-more-nodes) for the config commands
-- Permission denied — the Docker bridge accesses the device via the `devices:` mapping in the compose file, so host group membership isn't required. If you're accessing the device directly outside Docker, add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
-- Device reboot on connect — normal; the bridge disables HUPCL automatically on startup
+- Wrong device path: run `ls /dev/ttyACM* /dev/ttyUSB*` to find the correct device
+- Serial mode not enabled on the device: see [Adding More Nodes](#adding-more-nodes) for the config commands
+- Permission denied: the Docker bridge accesses the device via the `devices:` mapping in the compose file, so host group membership isn't required. If you're accessing the device directly outside Docker, add your user to the `dialout` group: `sudo usermod -aG dialout $USER` then reboot
+- Device reboot on connect: normal; the bridge disables HUPCL automatically on startup
 
 **📶 BLE source stuck on 'connecting'**
 
 Your device likely requires Bluetooth pairing before it will exchange data with the bridge. This affects PIN/passkey-protected devices. Re-run `./setup.sh`, select your BLE node, and choose to pair when prompted.
 
-If you need to pair manually, first confirm your BLE container name with `docker ps` (it will be `meshmonitor-ble-1`, `meshmonitor-ble-2`, etc. depending on how many BLE nodes you have), then:
+If you need to pair manually, first confirm your BLE container name with `docker ps` (it will be `meshmonitor-ble-1`, `meshmonitor-ble-2`, and so on, depending on how many BLE nodes you have), then:
 ```bash
 docker stop meshmonitor-ble-1
 bluetoothctl
@@ -294,7 +311,7 @@ nc -zv YOUR_NODE_IP 4403
 ```
 > If `nc` is not available: `bash -c 'echo >/dev/tcp/YOUR_NODE_IP/4403' && echo "open" || echo "closed"`
 
-If `ping` fails, the Pi can't reach the node at all — check that the node is powered on and connected to your network. If `ping` succeeds but the port check fails, the node is reachable but not accepting connections on port 4403 — verify the TCP server is enabled and the correct port is configured in your node's settings. Refer to your node's documentation for configuration details.
+If `ping` fails, the Pi can't reach the node at all. Check that the node is powered on and connected to your network. If `ping` succeeds but the port check fails, the node is reachable but not accepting connections on port 4403. Verify the TCP server is enabled and the correct port is configured in your node's settings. Refer to your node's documentation for configuration details.
 
 **🔄 UI broke after overnight upgrade** — check the logs first, then the upstream [CHANGELOG](https://github.com/Yeraze/meshmonitor/blob/main/CHANGELOG.md) for any breaking changes introduced by the new version:
 ```bash
